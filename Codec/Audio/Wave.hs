@@ -55,6 +55,7 @@ module Codec.Audio.Wave
   , waveBlockAlign
   , waveChannels
   , waveSamplesTotal
+  , waveDuration
     -- * Reading
   , readWaveFile
     -- * Writing
@@ -231,11 +232,19 @@ waveChannels :: Wave -> Word16
 waveChannels Wave {..} = fromIntegral (E.size waveChannelMask)
 
 -- | Total number of samples in the audio stream found by division of data
--- size in bytes by 'waveBlockAlign'.
+-- size in bytes by 'waveBlockAlign'. “Samples” here mean multi-channel
+-- samples, so one second of 44.1 kHz audio will have 44100 samples
+-- regardless of the number of channels.
 
 waveSamplesTotal :: Wave -> Word32
 waveSamplesTotal wave =
   waveDataSize wave `quot` fromIntegral (waveBlockAlign wave)
+
+-- | Duration in seconds.
+
+waveDuration :: Wave -> Double
+waveDuration wave =
+  fromIntegral (waveSamplesTotal wave) / fromIntegral (waveSampleRate wave)
 
 ----------------------------------------------------------------------------
 -- Reading
