@@ -170,7 +170,7 @@ data SpeakerPosition
 -- | Exceptions the library can throw.
 
 data WaveException
-  = UnknownFileFormat     String     FilePath
+  = BadFileFormat String FilePath
     -- ^ Format of given file doesn't look like anything familiar. The first
     -- argument is a message explaining what's wrong and the second argument
     -- is the file name.
@@ -254,17 +254,22 @@ readWaveFile path = liftIO . withFile path ReadMode $ \h -> do
       liftGet m = do
         r <- m
         case r of
-          Left msg -> throwIO (UnknownFileFormat msg path)
+          Left msg -> throwIO (BadFileFormat msg path)
           Right x  -> return x
   outerChunk <- liftGet (readChunk h 0)
   unless (chunkTag outerChunk == "RIFF") $
-    giveup (UnknownFileFormat "Can't locate the RIFF tag")
+    giveup (BadFileFormat "Can't locate the RIFF tag")
+  waveId <- B.hGet h 4
+  unless (waveId == "WAVE") $
+    giveup (BadFileFormat "Can't find WAVE format tag")
   let go wave = do
         offset <- hTell h
         Chunk {..} <- liftGet (readChunk h 0xffff)
         case (chunkTag, chunkBody) of
           ("data", _) ->
-            return wave { waveDataOffset = fromIntegral offset + 8 }
+            return wave
+              { waveDataOffset = fromIntegral offset + 8
+              , waveDataSize   = chunkSize }
           (tag, Nothing) ->
             giveup (NonDataChunkIsTooLong tag)
           ("fmt ", Just body) ->
@@ -360,6 +365,8 @@ writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h -> do
   -- Write the outer RIFF chunk.
   beforeOuter <- hTell h
   writeChunk h (Chunk "RIFF" 0 writeNoData)
+  -- Write the WAVE format tag.
+  B.hPut h "WAVE"
   -- Write fmt chunk.
   writeBsChunk "fmt " (renderFmtChunk wave)
   -- Write any extra chunks if present.
