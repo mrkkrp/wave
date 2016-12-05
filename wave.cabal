@@ -40,9 +40,9 @@ maintainer:           Mark Karpov <markkarpov@openmailbox.org>
 homepage:             https://github.com/mrkkrp/wave
 bug-reports:          https://github.com/mrkkrp/wave/issues
 category:             Codec, Audio
-synopsis:             Work with WAVE, RF64, and WAVE64 files
+synopsis:             Work with WAVE, RF64, and Sony Wave64 files
 build-type:           Simple
-description:          Work with WAVE, RF64, and WAVE64 files.
+description:          Work with WAVE, RF64, and Sony Wave64 files.
 extra-doc-files:      CHANGELOG.md
                     , README.md
 
@@ -62,7 +62,6 @@ library
                     , containers       >= 0.5    && < 0.6
                     , data-default-class
   exposed-modules:    Codec.Audio.Wave
-  other-modules:      Codec.Audio.Wave.Riff
   if flag(dev)
     ghc-options:      -Wall -Werror
   else
