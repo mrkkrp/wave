@@ -48,6 +48,7 @@ module Codec.Audio.Wave
     Wave (..)
   , WaveFormat (..)
   , SampleFormat (..)
+  , SpeakerPosition (..)
   , WaveException (..)
     -- * Derived information
   , waveByteRate
