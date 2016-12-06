@@ -374,8 +374,9 @@ readWaveFile path = liftIO . withFile path ReadMode $ \h -> do
         case (chunkTag, chunkBody) of
           ("data", _) ->
             return wave
-              { waveDataOffset = fromIntegral offset + 8
-              , waveDataSize   = chunkSize }
+              { waveDataOffset  = fromIntegral offset + 8
+              , waveDataSize    = chunkSize
+              , waveOtherChunks = reverse (waveOtherChunks wave) }
           (tag, Nothing) ->
             giveup (NonDataChunkIsTooLong tag)
           ("fmt ", Just body) ->
