@@ -110,11 +110,12 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/1ch-48000hz-32bit-float.wav"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 48000
-      waveSampleFormat    `shouldBe` SampleFormatIeeeFloat
+      waveSampleFormat    `shouldBe` SampleFormatIeeeFloat32Bit
       waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 48140
-      -- waveOtherChunks     `shouldBe` [] -- got PEAK and fact things here, investigate
+      waveOtherChunks     `shouldBe`
+        [("PEAK","\SOH\NUL\NUL\NUL\139\214FX\205\204L?,\SOH\NUL\NUL"),("fact","\ETX/\NUL\NUL")]
       waveByteRate      w `shouldBe` 192000
       waveBitRate       w `shouldBe` 1536.0
       waveBitsPerSample w `shouldBe` 32
@@ -122,3 +123,21 @@ spec = do
       waveChannels      w `shouldBe` 1
       waveSamplesTotal  w `shouldBe` 12035
       waveDuration      w `shouldBe` 0.25072916666666667
+
+    it "1 channel, 16000 Hz, 64 bit float" $ do
+      w@Wave {..} <- readWaveFile "audio-samples/1ch-16000hz-64bit-float.wav"
+      waveFileFormat      `shouldBe` WaveVanilla
+      waveSampleRate      `shouldBe` 16000
+      waveSampleFormat    `shouldBe` SampleFormatIeeeFloat64Bit
+      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveDataOffset      `shouldBe` 80
+      waveDataSize        `shouldBe` 104080
+      waveOtherChunks     `shouldBe`
+        [("PEAK","\SOH\NUL\NUL\NUL\243\215FX\205\204L?d\NUL\NUL\NUL"),("fact","\210\&2\NUL\NUL")]
+      waveByteRate      w `shouldBe` 128000
+      waveBitRate       w `shouldBe` 1024.0
+      waveBitsPerSample w `shouldBe` 64
+      waveBlockAlign    w `shouldBe` 8
+      waveChannels      w `shouldBe` 1
+      waveSamplesTotal  w `shouldBe` 13010
+      waveDuration      w `shouldBe` 0.813125

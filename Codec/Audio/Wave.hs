@@ -146,8 +146,9 @@ data SampleFormat
   | SampleFormatPcmSigned   Word16
     -- ^ Signed integers, the argument is the number of bits per sample
     -- (everything greater than 8 bits is encoded as signed integers).
-  | SampleFormatIeeeFloat
+  | SampleFormatIeeeFloat32Bit
     -- ^ Samples are 32 bit floating point numbers.
+  | SampleFormatIeeeFloat64Bit
   deriving (Show, Read, Eq, Ord, Typeable, Data)
 
 -- | Speaker positions clarifying which exactly channels are packed in the
@@ -220,7 +221,8 @@ waveBitsPerSample Wave {..} =
   case waveSampleFormat of
     SampleFormatPcmUnsigned bps -> bps
     SampleFormatPcmSigned   bps -> bps
-    SampleFormatIeeeFloat       -> 32
+    SampleFormatIeeeFloat32Bit  -> 32
+    SampleFormatIeeeFloat64Bit  -> 64
 
 -- | Block alignment of samples as number of bits per sample (rounded
 -- towards next multiplier of 8 if necessary) multiplied by number of
@@ -319,8 +321,8 @@ readWaveFmt wave bytes = flip S.runGet bytes $ do
   bitsPerSample <- if extensible
     then S.getWord16le
     else return bps
-  when (ieeeFloat && bitsPerSample /= 32) $
-    fail "The sample format is IEEE Float, but bits per sample is not 32"
+  when (ieeeFloat && not (bitsPerSample == 32 || bitsPerSample == 64)) $
+    fail "The sample format is IEEE Float, but bits per sample is not 32 or 64"
   channelMask <- if extensible
     then fromSpeakerMask <$> S.getWord32le
     else return (defaultSpeakerSet channels)
@@ -328,7 +330,9 @@ readWaveFmt wave bytes = flip S.runGet bytes $ do
     { waveSampleRate    = sampleRate
     , waveSampleFormat  =
       if ieeeFloat
-        then SampleFormatIeeeFloat
+        then if bitsPerSample == 32
+               then SampleFormatIeeeFloat32Bit
+               else SampleFormatIeeeFloat64Bit
         else if bitsPerSample <= 8
                then SampleFormatPcmUnsigned bitsPerSample
                else SampleFormatPcmSigned   bitsPerSample
@@ -406,9 +410,10 @@ renderFmtChunk :: Wave -> ByteString
 renderFmtChunk wave@Wave {..} = S.runPut $ do
   let extensible = isExtensibleFmt wave
       fmt = case waveSampleFormat of
-        SampleFormatPcmUnsigned _ -> waveFormatPcm
-        SampleFormatPcmSigned   _ -> waveFormatPcm
-        SampleFormatIeeeFloat     -> waveFormatIeeeFloat
+        SampleFormatPcmUnsigned  _ -> waveFormatPcm
+        SampleFormatPcmSigned    _ -> waveFormatPcm
+        SampleFormatIeeeFloat32Bit -> waveFormatIeeeFloat
+        SampleFormatIeeeFloat64Bit -> waveFormatIeeeFloat
       bps = waveBitsPerSample wave
   S.putWord16le (if extensible then waveFormatExtensible else fmt)
   S.putWord16le (waveChannels wave)
@@ -421,9 +426,10 @@ renderFmtChunk wave@Wave {..} = S.runPut $ do
     S.putWord16le bps
     S.putWord32le (toSpeakerMask waveChannelMask)
     S.putByteString $ case waveSampleFormat of
-      SampleFormatPcmUnsigned _ -> ksdataformatSubtypePcm
-      SampleFormatPcmSigned   _ -> ksdataformatSubtypePcm
-      SampleFormatIeeeFloat     -> ksdataformatSubtypeIeeeFloat
+      SampleFormatPcmUnsigned  _ -> ksdataformatSubtypePcm
+      SampleFormatPcmSigned    _ -> ksdataformatSubtypePcm
+      SampleFormatIeeeFloat32Bit -> ksdataformatSubtypeIeeeFloat
+      SampleFormatIeeeFloat64Bit -> ksdataformatSubtypeIeeeFloat
 
 -- | Write a RIFF 'Chunk'. It's the responsibility of the programmer to
 -- ensure that specified size matches size of body that is actually written.
