@@ -58,6 +58,15 @@ module Codec.Audio.Wave
   , waveChannels
   , waveSamplesTotal
   , waveDuration
+    -- * Common speaker configurations
+  , speakerMono
+  , speakerStereo
+  , speakerQuad
+  , speakerSurround
+  , speaker5Point1
+  , speaker7Point1
+  , speaker5Point1Surround
+  , speaker7Point1Surround
     -- * Reading
   , readWaveFile
     -- * Writing
@@ -253,6 +262,85 @@ waveSamplesTotal wave =
 waveDuration :: Wave -> Double
 waveDuration wave =
   fromIntegral (waveSamplesTotal wave) / fromIntegral (waveSampleRate wave)
+
+----------------------------------------------------------------------------
+-- Common speaker configurations
+
+-- | Front center (C).
+
+speakerMono :: Set SpeakerPosition
+speakerMono = E.fromList [SpeakerFrontCenter]
+
+-- | Front left (L), front right (R).
+
+speakerStereo :: Set SpeakerPosition
+speakerStereo = E.fromList [SpeakerFrontLeft,SpeakerFrontRight]
+
+-- | L, R, back left (Lb), back right (Rb).
+
+speakerQuad :: Set SpeakerPosition
+speakerQuad = E.fromList
+  [ SpeakerFrontLeft
+  , SpeakerFrontRight
+  , SpeakerBackLeft
+  , SpeakerBackRight ]
+
+-- | Surround: L, R, front center (C), back center (Cb).
+
+speakerSurround :: Set SpeakerPosition
+speakerSurround = E.fromList
+  [ SpeakerFrontLeft
+  , SpeakerFrontRight
+  , SpeakerFrontCenter
+  , SpeakerBackCenter ]
+
+-- | L, R, C, Lb, Rb, low frequency (LFE).
+
+speaker5Point1 :: Set SpeakerPosition
+speaker5Point1 = E.fromList
+  [ SpeakerFrontLeft
+  , SpeakerFrontRight
+  , SpeakerFrontCenter
+  , SpeakerBackLeft
+  , SpeakerBackRight
+  , SpeakerLowFrequency ]
+
+-- | L, R, C, Lb, Rb, front left-of-center, front right-of-center, LFE.
+
+speaker7Point1 :: Set SpeakerPosition
+speaker7Point1 = E.fromList
+  [ SpeakerFrontLeft
+  , SpeakerFrontRight
+  , SpeakerFrontCenter
+  , SpeakerBackLeft
+  , SpeakerBackRight
+  , SpeakerFrontLeftOfCenter
+  , SpeakerFrontRightOfCenter
+  , SpeakerLowFrequency ]
+
+-- | L, R, C, side left (Ls), side right (Rs), LFE.
+
+speaker5Point1Surround :: Set SpeakerPosition
+speaker5Point1Surround = E.fromList
+  [ SpeakerFrontLeft
+  , SpeakerFrontRight
+  , SpeakerFrontCenter
+  , SpeakerSideLeft
+  , SpeakerSideRight
+  , SpeakerLowFrequency ]
+
+-- | L, R, C, Lb, Rb, Ls, Rs, LFE.
+
+speaker7Point1Surround :: Set SpeakerPosition
+speaker7Point1Surround = E.fromList
+  [ SpeakerFrontLeft
+  , SpeakerFrontRight
+  , SpeakerFrontCenter
+  , SpeakerBackLeft
+  , SpeakerBackRight
+  , SpeakerSideLeft
+  , SpeakerSideRight
+  , SpeakerLowFrequency ]
 
 ----------------------------------------------------------------------------
 -- Reading
@@ -546,15 +634,13 @@ fromSpeakerMask channelMask = E.fromList $ mapMaybe f [minBound..maxBound]
 -- | Get default speaker set for given number of channels.
 
 defaultSpeakerSet :: Word16 -> Set SpeakerPosition
-defaultSpeakerSet = E.fromList . f . fromIntegral
-  where
-    f n = case n of
-      0 -> []
-      1 -> [SpeakerFrontCenter]
-      2 -> [SpeakerFrontLeft,SpeakerFrontRight]
-      3 -> [SpeakerFrontLeft,SpeakerFrontCenter,SpeakerFrontRight]
-      4 -> [SpeakerFrontLeft,SpeakerFrontRight,SpeakerBackLeft,SpeakerBackRight]
-      x -> take x [minBound..maxBound]
+defaultSpeakerSet n = case n of
+  0 -> E.empty
+  1 -> speakerMono
+  2 -> speakerStereo
+  3 -> E.fromList [SpeakerFrontLeft,SpeakerFrontCenter,SpeakerFrontRight]
+  4 -> speakerSurround
+  x -> E.fromList $ take (fromIntegral x) [minBound..maxBound]
 
 -- | Does this 'Wave' record requires extensible format chunk to be used?
 

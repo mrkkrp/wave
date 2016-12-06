@@ -39,7 +39,6 @@ where
 
 import Codec.Audio.Wave
 import Test.Hspec
-import qualified Data.Set as E
 
 -- The test suite has two parts. In the first part we establish that the
 -- library is capable of reading various sample files. In the second part,
@@ -60,7 +59,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 8000
       waveSampleFormat    `shouldBe` SampleFormatPcmUnsigned 8
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontLeft,SpeakerFrontRight]
+      waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 11376
       waveOtherChunks     `shouldBe` []
@@ -77,7 +76,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 11025
       waveSampleFormat    `shouldBe` SampleFormatPcmSigned 24
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontLeft,SpeakerFrontRight]
+      waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 23274
       waveOtherChunks     `shouldBe` []
@@ -94,7 +93,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 44100
       waveSampleFormat    `shouldBe` SampleFormatPcmSigned 16
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 5046
       waveOtherChunks     `shouldBe` []
@@ -111,7 +110,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 48000
       waveSampleFormat    `shouldBe` SampleFormatIeeeFloat32Bit
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 48140
       waveOtherChunks     `shouldBe`
@@ -129,7 +128,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 16000
       waveSampleFormat    `shouldBe` SampleFormatIeeeFloat64Bit
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 104080
       waveOtherChunks     `shouldBe`
@@ -148,7 +147,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 8000
       waveSampleFormat    `shouldBe` SampleFormatPcmUnsigned 8
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontLeft,SpeakerFrontRight]
+      waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 11376
       waveOtherChunks     `shouldBe` [("fact","8\SYN\NUL\NUL")]
@@ -165,7 +164,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 11025
       waveSampleFormat    `shouldBe` SampleFormatPcmSigned 24
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontLeft,SpeakerFrontRight]
+      waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 23274
       waveOtherChunks     `shouldBe` [("fact","'\SI\NUL\NUL")]
@@ -182,7 +181,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 44100
       waveSampleFormat    `shouldBe` SampleFormatPcmSigned 16
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 5046
       waveOtherChunks     `shouldBe` [("fact","\219\t\NUL\NUL")]
@@ -199,7 +198,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 48000
       waveSampleFormat    `shouldBe` SampleFormatIeeeFloat32Bit
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 104
       waveDataSize        `shouldBe` 48140
       waveOtherChunks     `shouldBe`
@@ -217,7 +216,7 @@ spec = do
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 16000
       waveSampleFormat    `shouldBe` SampleFormatIeeeFloat64Bit
-      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 104
       waveDataSize        `shouldBe` 104080
       waveOtherChunks     `shouldBe`
