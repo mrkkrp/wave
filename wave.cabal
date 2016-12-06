@@ -45,6 +45,7 @@ build-type:           Simple
 description:          Work with WAVE, RF64, and Sony Wave64 files.
 extra-doc-files:      CHANGELOG.md
                     , README.md
+data-files:           audio-samples/*.wav
 
 source-repository head
   type:               git
@@ -75,6 +76,7 @@ test-suite tests
   hs-source-dirs:     tests
   type:               exitcode-stdio-1.0
   build-depends:      base             >= 4.7    && < 5.0
+                    , containers       >= 0.5    && < 0.6
                     , hspec            >= 2.0    && < 3.0
                     , wave             >= 0.1.0
   if flag(dev)

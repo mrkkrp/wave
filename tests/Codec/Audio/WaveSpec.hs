@@ -30,11 +30,95 @@
 -- ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 -- POSSIBILITY OF SUCH DAMAGE.
 
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+
 module Codec.Audio.WaveSpec
   ( spec )
 where
 
+import Codec.Audio.Wave
 import Test.Hspec
+import qualified Data.Set as E
+
+-- The test suite has two parts. In the first part we establish that the
+-- library is capable of reading various sample files. In the second part,
+-- we generate random WAVE files and write them to temporary files, then
+-- read the files back and compare. This way we ensure that 1) the library
+-- supports reading arbitrary valid files 2) since reading is valid, we can
+-- assume that writing is valid too if the read results looks OK.
+--
+-- If any problems will be discovered in the future, it's simple to extend
+-- the first part of the test suite to check for those cases.
 
 spec :: Spec
-spec = return ()
+spec = do
+
+  describe "vanilla WAVE" $ do
+    it "2 channels, 8000 Hz, 8 bit" $ do
+      w@Wave {..} <- readWaveFile "audio-samples/2ch-8000hz-8bit.wav"
+      waveFileFormat      `shouldBe` WaveVanilla
+      waveSampleRate      `shouldBe` 8000
+      waveSampleFormat    `shouldBe` SampleFormatPcmUnsigned 8
+      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontLeft,SpeakerFrontRight]
+      waveDataOffset      `shouldBe` 44
+      waveDataSize        `shouldBe` 11376
+      waveOtherChunks     `shouldBe` []
+      waveByteRate      w `shouldBe` 16000
+      waveBitRate       w `shouldBe` 128
+      waveBitsPerSample w `shouldBe` 8
+      waveBlockAlign    w `shouldBe` 2
+      waveChannels      w `shouldBe` 2
+      waveSamplesTotal  w `shouldBe` 5688
+      waveDuration      w `shouldBe` 0.711
+
+    it "2 channels, 11025 Hz, 24 bit" $ do
+      w@Wave {..} <- readWaveFile "audio-samples/2ch-11025hz-24bit.wav"
+      waveFileFormat      `shouldBe` WaveVanilla
+      waveSampleRate      `shouldBe` 11025
+      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 24
+      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontLeft,SpeakerFrontRight]
+      waveDataOffset      `shouldBe` 44
+      waveDataSize        `shouldBe` 23274
+      waveOtherChunks     `shouldBe` []
+      waveByteRate      w `shouldBe` 66150
+      waveBitRate       w `shouldBe` 529.2
+      waveBitsPerSample w `shouldBe` 24
+      waveBlockAlign    w `shouldBe` 6
+      waveChannels      w `shouldBe` 2
+      waveSamplesTotal  w `shouldBe` 3879
+      waveDuration      w `shouldBe` 0.35183673469387755
+
+    it "1 channel, 44100 Hz, 16 bit" $ do
+      w@Wave {..} <- readWaveFile "audio-samples/1ch-44100hz-16bit.wav"
+      waveFileFormat      `shouldBe` WaveVanilla
+      waveSampleRate      `shouldBe` 44100
+      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 16
+      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveDataOffset      `shouldBe` 44
+      waveDataSize        `shouldBe` 5046
+      waveOtherChunks     `shouldBe` []
+      waveByteRate      w `shouldBe` 88200
+      waveBitRate       w `shouldBe` 705.6
+      waveBitsPerSample w `shouldBe` 16
+      waveBlockAlign    w `shouldBe` 2
+      waveChannels      w `shouldBe` 1
+      waveSamplesTotal  w `shouldBe` 2523
+      waveDuration      w `shouldBe` 0.0572108843537415
+
+    it "1 channel, 48000 Hz, 32 bit float" $ do
+      w@Wave {..} <- readWaveFile "audio-samples/1ch-48000hz-32bit-float.wav"
+      waveFileFormat      `shouldBe` WaveVanilla
+      waveSampleRate      `shouldBe` 48000
+      waveSampleFormat    `shouldBe` SampleFormatIeeeFloat
+      waveChannelMask     `shouldBe` E.fromList [SpeakerFrontCenter]
+      waveDataOffset      `shouldBe` 80
+      waveDataSize        `shouldBe` 48140
+      -- waveOtherChunks     `shouldBe` [] -- got PEAK and fact things here, investigate
+      waveByteRate      w `shouldBe` 192000
+      waveBitRate       w `shouldBe` 1536.0
+      waveBitsPerSample w `shouldBe` 32
+      waveBlockAlign    w `shouldBe` 4
+      waveChannels      w `shouldBe` 1
+      waveSamplesTotal  w `shouldBe` 12035
+      waveDuration      w `shouldBe` 0.25072916666666667
