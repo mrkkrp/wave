@@ -306,7 +306,6 @@ readWaveFmt wave bytes = flip S.runGet bytes $ do
            format == waveFormatExtensible ) $
     fail "Unsupported audio format specified in fmt chunk"
   let extensible = format == waveFormatExtensible
-      ieeeFloat  = format == waveFormatIeeeFloat
   channels   <- S.getWord16le
   sampleRate <- S.getWord32le
   S.skip 4 -- byte rate (useless, we can infer it)
@@ -321,11 +320,20 @@ readWaveFmt wave bytes = flip S.runGet bytes $ do
   bitsPerSample <- if extensible
     then S.getWord16le
     else return bps
-  when (ieeeFloat && not (bitsPerSample == 32 || bitsPerSample == 64)) $
-    fail "The sample format is IEEE Float, but bits per sample is not 32 or 64"
   channelMask <- if extensible
     then fromSpeakerMask <$> S.getWord32le
     else return (defaultSpeakerSet channels)
+  extGuid <- if extensible
+    then S.getByteString 16
+    else return $ if format == waveFormatPcm
+                    then ksdataformatSubtypePcm
+                    else ksdataformatSubtypeIeeeFloat
+  when (extGuid /= ksdataformatSubtypePcm &&
+        extGuid /= ksdataformatSubtypeIeeeFloat) $
+    fail ("Unknown or unsupported GUID in extensible fmt chunk" ++ show extGuid)
+  let ieeeFloat = extGuid == ksdataformatSubtypeIeeeFloat
+  when (ieeeFloat && not (bitsPerSample == 32 || bitsPerSample == 64)) $
+    fail "The sample format is IEEE Float, but bits per sample is not 32 or 64"
   return wave
     { waveSampleRate    = sampleRate
     , waveSampleFormat  =
@@ -445,6 +453,8 @@ renderFmtChunk wave@Wave {..} = S.runPut $ do
       SampleFormatPcmSigned    _ -> ksdataformatSubtypePcm
       SampleFormatIeeeFloat32Bit -> ksdataformatSubtypeIeeeFloat
       SampleFormatIeeeFloat64Bit -> ksdataformatSubtypeIeeeFloat
+  unless extensible $
+    S.putWord16le 0
 
 -- | Write a RIFF 'Chunk'. It's the responsibility of the programmer to
 -- ensure that specified size matches size of body that is actually written.
@@ -483,14 +493,18 @@ waveFormatExtensible = 0xfffe -- WAVE_FORMAT_EXTENSIBLE
 -- | GUID for extensible format chunk corresponding to PCM.
 
 ksdataformatSubtypePcm :: ByteString -- KSDATAFORMAT_SUBTYPE_PCM
-ksdataformatSubtypePcm =
-  "\x00\x00\x00\x01\x00\x00\x00\x10\x80\x00\x00\xaa\x00\x38\x9b\x71"
+ksdataformatSubtypePcm = -- 00000001-0000-0010-8000-00aa00389b71
+  "\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x00\x38\x9b\x71"
+-- NOTE This is binary representation of GUID, with some parts written in
+-- little-endian form, see:
+--
+-- https://msdn.microsoft.com/en-us/library/windows/desktop/aa373931(v=vs.85).aspx
 
 -- | GUID for extensible format chunk corresponding to IEEE float.
 
 ksdataformatSubtypeIeeeFloat :: ByteString -- KSDATAFORMAT_SUBTYPE_IEEE_FLOAT
-ksdataformatSubtypeIeeeFloat =
-  "\x00\x00\x00\x03\x00\x00\x00\x10\x80\x00\x00\xaa\x00\x38\x9b\x71"
+ksdataformatSubtypeIeeeFloat = -- 00000003-0000-0010-8000-00aa00389b71
+  "\x03\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x00\x38\x9b\x71"
 
 -- | 'SpeakerPosition' to corresponding bit flag, as per
 -- <https://msdn.microsoft.com/en-us/library/windows/desktop/dd390971(v=vs.85).aspx>.
