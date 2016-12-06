@@ -158,6 +158,7 @@ data SampleFormat
   | SampleFormatIeeeFloat32Bit
     -- ^ Samples are 32 bit floating point numbers.
   | SampleFormatIeeeFloat64Bit
+    -- ^ Samples are 64 bit floating point numbers.
   deriving (Show, Read, Eq, Ord, Typeable, Data)
 
 -- | Speaker positions clarifying which exactly channels are packed in the
