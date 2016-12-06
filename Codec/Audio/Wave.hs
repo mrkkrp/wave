@@ -504,8 +504,8 @@ writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h -> do
     B.hPut h "\0"
   -- Go back and overwrite dummy values.
   afterData  <- hTell h
-  let dataSize = fromIntegral (afterData - beforeData)
-      riffSize = fromIntegral (afterData - beforeOuter)
+  let dataSize = fromIntegral (afterData - beforeData - 8)
+      riffSize = fromIntegral (afterData - beforeOuter - 8)
   when nonPcm $ do
     hSeek h AbsoluteSeek beforeFact
     let samplesTotal = waveSamplesTotal wave { waveDataSize = dataSize }
