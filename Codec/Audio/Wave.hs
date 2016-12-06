@@ -369,6 +369,10 @@ readChunk h maxSize = do
 -- dynamically after using the callback. Further, the function takes care of
 -- the requirement that WAVE data should end on “even byte boundary”. The
 -- pad byte is written for you if necessary and included in data size.
+--
+-- If 'Wave' specifies floating point sample format, the “fact” chunk is
+-- automatically generated and written (the chunk is required for all
+-- non-PCM formats by the spec).
 
 writeWaveFile :: MonadIO m
   => FilePath          -- ^ Where to save the file
@@ -381,6 +385,7 @@ writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h -> do
         let chunkSize = fromIntegral (B.length body)
             chunkBody = Right body
         in writeChunk h Chunk {..}
+      nonPcm = isNonPcm (waveSampleFormat wave)
   -- Write the outer RIFF chunk.
   beforeOuter <- hTell h
   writeChunk h (Chunk "RIFF" 0 writeNoData)
@@ -388,6 +393,10 @@ writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h -> do
   B.hPut h "WAVE"
   -- Write fmt chunk.
   writeBsChunk "fmt " (renderFmtChunk wave)
+  -- Write a dummy fact chunk if necessary.
+  beforeFact <- hTell h
+  when nonPcm $
+    writeBsChunk "fact" "????"
   -- Write any extra chunks if present.
   forM_ (waveOtherChunks wave) (uncurry writeBsChunk)
   -- Write data chunk.
@@ -397,12 +406,18 @@ writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h -> do
   rightAfterData <- hTell h
   when (odd rightAfterData) $
     B.hPut h "\0"
-  -- Go back and write sizes.
+  -- Go back and overwrite dummy values.
   afterData  <- hTell h
+  let dataSize = fromIntegral (afterData - beforeData)
+      riffSize = fromIntegral (afterData - beforeOuter)
+  when nonPcm $ do
+    hSeek h AbsoluteSeek beforeFact
+    let samplesTotal = waveSamplesTotal wave { waveDataSize = dataSize }
+    writeBsChunk "fact" (S.runPut (S.putWord32le samplesTotal))
   hSeek h AbsoluteSeek beforeData
-  writeChunk h (Chunk "data" (fromIntegral $ afterData - beforeData) writeNoData)
+  writeChunk h (Chunk "data" dataSize writeNoData)
   hSeek h AbsoluteSeek beforeOuter
-  writeChunk h (Chunk "RIFF" (fromIntegral $ afterData - beforeOuter) writeNoData)
+  writeChunk h (Chunk "RIFF" riffSize writeNoData)
 
 -- | Render format chunk as a strict 'ByteString' from a given 'Wave'.
 
@@ -534,6 +549,14 @@ isExtensibleFmt wave@Wave {..} =
   waveChannels wave > 2 ||
   waveChannelMask /= defaultSpeakerSet (waveChannels wave) ||
   (waveBitsPerSample wave `rem` 8) /= 0
+
+-- | Determine if given 'SampleFormat' is not PCM.
+
+isNonPcm :: SampleFormat -> Bool
+isNonPcm (SampleFormatPcmUnsigned _) = False
+isNonPcm (SampleFormatPcmSigned   _) = False
+isNonPcm SampleFormatIeeeFloat32Bit  = True
+isNonPcm SampleFormatIeeeFloat64Bit  = True
 
 -- | Round bits per sample to next multiplier of 8, if necessary.
 
