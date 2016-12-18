@@ -42,6 +42,7 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RankNTypes         #-}
 {-# LANGUAGE RecordWildCards    #-}
 
 module Codec.Audio.Wave
@@ -57,7 +58,6 @@ module Codec.Audio.Wave
   , waveBitsPerSample
   , waveBlockAlign
   , waveChannels
-  , waveSamplesTotal
   , waveDuration
     -- * Common speaker configurations
   , speakerMono
@@ -81,7 +81,7 @@ import Data.Bits
 import Data.ByteString (ByteString)
 import Data.Data (Data)
 import Data.Default.Class
-import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe, isNothing)
 import Data.Monoid ((<>))
 import Data.Set (Set)
 import Data.Typeable
@@ -102,8 +102,8 @@ import Control.Applicative
 -- field in this record provides orthogonal piece of information, so no
 -- field can be calculated from other fields. The fields are complemented by
 -- the following functions that calculate some derivative parameters:
--- 'waveByteRate', 'waveBitRate', 'waveBitsPerSample', 'waveBlockAlign',
--- 'waveChannels', and 'waveSamplesTotal'.
+-- 'waveByteRate', 'waveBitRate', 'waveBitsPerSample', 'waveBlockAlign', and
+-- 'waveChannels'.
 
 data Wave = Wave
   { waveFileFormat   :: !WaveFormat
@@ -123,6 +123,12 @@ data Wave = Wave
     -- begins. Default value: 0.
   , waveDataSize     :: !Word64
     -- ^ Size of audio data in bytes. Default value: 0.
+  , waveSamplesTotal :: !Word64
+    -- ^ Total number of samples in the audio stream. “Samples” here mean
+    -- multi-channel samples, so one second of 44.1 kHz audio will have
+    -- 44100 samples regardless of the number of channels. For PCM format
+    -- it's deduced from size of data-block, for other formats it's read
+    -- from\/written to the “fact” chunk. Default value: 0.
   , waveOtherChunks  :: [(ByteString, ByteString)]
     -- ^ Other chunks as @(tag, body)@ pairs. Only first four bytes of @tag@
     -- are significant (and it must be four bytes long, if it's too short it
@@ -135,8 +141,9 @@ instance Default Wave where
     , waveSampleRate   = 44100
     , waveSampleFormat = SampleFormatPcmInt 16
     , waveChannelMask  = defaultSpeakerSet 2
-    , waveDataSize     = 0
     , waveDataOffset   = 0
+    , waveDataSize     = 0
+    , waveSamplesTotal = 0
     , waveOtherChunks  = [] }
 
 -- | 'WaveFormat' as flavor of WAVE file.
@@ -194,6 +201,9 @@ data WaveException
     -- ^ The library found a chunk which is not a @data@ chunk but is way
     -- too long. The first argument is the tag of the chunk and the second
     -- argument is the file name.
+  | NonPcmFormatButMissingFact FilePath
+    -- ^ The specified format is non-PCM, it's vanilla WAVE, but “fact”
+    -- chunk is missing.
   deriving (Show, Read, Eq, Typeable, Data)
 
 instance Exception WaveException
@@ -207,7 +217,7 @@ data Chunk m = Chunk
   , chunkBody :: m ByteString -- ^ Chunk body in some form
   }
 
--- | A “ds64” chunk used in RF64 WAVE extension.
+-- | A “ds64” chunk used in RF64 WAVE extension. This type is not public.
 
 data Ds64 = Ds64
   { ds64RiffSize     :: Word64 -- ^ Size of RIFF chunk (64 bits)
@@ -215,11 +225,13 @@ data Ds64 = Ds64
   , ds64TotalSamples :: Word64 -- ^ Total number of samples (64 bits)
   }
 
-instance Default Ds64 where
-  def = Ds64
-    { ds64RiffSize     = 0
-    , ds64DataSize     = 0
-    , ds64TotalSamples = 0 }
+-- | A helper type synonym for give up function signatures.
+
+type GiveUp = forall a. (FilePath -> WaveException) -> IO a
+
+-- | A helpers type synonym for the function to lift parsers.
+
+type LiftGet = forall a. IO (Either String a) -> IO a
 
 ----------------------------------------------------------------------------
 -- Derived information
@@ -259,15 +271,6 @@ waveBlockAlign wave = waveChannels wave * bytesPerSample
 
 waveChannels :: Wave -> Word16
 waveChannels Wave {..} = fromIntegral (E.size waveChannelMask)
-
--- | Total number of samples in the audio stream found by division of data
--- size in bytes by 'waveBlockAlign'. “Samples” here mean multi-channel
--- samples, so one second of 44.1 kHz audio will have 44100 samples
--- regardless of the number of channels.
-
-waveSamplesTotal :: Wave -> Word64
-waveSamplesTotal wave =
-  waveDataSize wave `quot` fromIntegral (waveBlockAlign wave)
 
 -- | Duration in seconds.
 
@@ -362,6 +365,11 @@ speaker7Point1Surround = E.fromList
 --
 -- You can feed vanilla WAVE, RF64, and Sony Wave64 files. The actual format
 -- is detected by actual contents of file, not extension.
+--
+-- PCM with samples in form of integers and floats only are supported, see
+-- 'SampleFormat'. Addition of other formats will be performed on request,
+-- please feel free to contact me at
+-- <https://github.com/mrkkrp/wave/issues>.
 
 readWaveFile :: MonadIO m
   => FilePath          -- ^ Location of file to read
@@ -374,41 +382,100 @@ readWaveFile path = liftIO . withFile path ReadMode $ \h -> do
           Left msg -> throwIO (BadFileFormat msg path)
           Right x  -> return x
   outerChunk <- liftGet (readChunk h 0)
-  let riff = chunkTag outerChunk == "RIFF"
-      rf64 = chunkTag outerChunk == "RF64"
-  unless (riff || rf64) $
-    giveup (BadFileFormat "Can't locate the RIFF/RF64 tag")
+  case chunkTag outerChunk of
+    "RIFF" -> readWaveVanilla h giveup liftGet
+    "RF64" -> readWaveRF64    h giveup liftGet
+    -- TODO add something for Wave64 here
+    _      -> giveup (BadFileFormat "Can't locate RIFF/RF64 tag")
+
+-- | Parse classic WAVE file.
+
+readWaveVanilla
+  :: Handle            -- ^ 'Handle' to read from
+  -> GiveUp            -- ^ How to give up
+  -> LiftGet           -- ^ How to lift parsers
+  -> IO Wave           -- ^ The result
+readWaveVanilla h giveup liftGet = do
+  grabWaveTag h giveup
+  grabWaveChunks h giveup liftGet Nothing Nothing
+    def { waveFileFormat = WaveVanilla } -- just to be explicit
+
+-- | Parse RF64 file.
+
+readWaveRF64
+  :: Handle            -- ^ 'Handle' to read from
+  -> GiveUp            -- ^ How to give up
+  -> LiftGet           -- ^ How to lift parsers
+  -> IO Wave           -- ^ The result
+readWaveRF64 h giveup liftGet = do
+  grabWaveTag h giveup
+  mds64 <- liftGet (readChunk h 0xffff)
+  unless (chunkTag mds64 == "ds64") $
+    giveup (BadFileFormat "Can't find ds64 chunk")
+  Ds64 {..} <- case chunkBody mds64 of
+    Nothing -> giveup (NonDataChunkIsTooLong "ds64")
+    Just body -> liftGet (return $ readDs64 body)
+  grabWaveChunks h giveup liftGet (Just ds64DataSize) (Just ds64TotalSamples)
+    def { waveFileFormat   = WaveRF64
+        , waveSamplesTotal = 0xffffffff }
+
+-- | Read four bytes from given 'Handle' and throw an exception if they are
+-- not “WAVE”.
+
+grabWaveTag :: Handle -> GiveUp -> IO ()
+grabWaveTag h giveup = do
   waveId <- B.hGet h 4
   unless (waveId == "WAVE") $
     giveup (BadFileFormat "Can't find WAVE format tag")
-  Ds64 {..} <- if rf64
-    then do
-      mds64 <- liftGet (readChunk h 0xffff)
-      unless (chunkTag mds64 == "ds64") $
-        giveup (BadFileFormat "Can't find ds64 chunk")
-      case chunkBody mds64 of
-        Nothing -> giveup (NonDataChunkIsTooLong "ds64")
-        Just body -> liftGet (return $ readDs64 body)
-    else return def
-  let go wave = do
-        offset <- hTell h
-        Chunk {..} <- liftGet (readChunk h 0xffff)
-        case (chunkTag, chunkBody) of
-          ("data", _) ->
-            return wave
-              { waveDataOffset  = fromIntegral offset + 8
-              , waveDataSize    =
-                  if rf64
-                    then ds64DataSize
-                    else fromIntegral chunkSize
-              , waveOtherChunks = reverse (waveOtherChunks wave) }
-          (tag, Nothing) ->
-            giveup (NonDataChunkIsTooLong tag)
-          ("fmt ", Just body) ->
-            liftGet (return $ readWaveFmt wave body) >>= go
-          (tag, Just body) ->
-            go wave { waveOtherChunks = (tag, body) : waveOtherChunks wave }
-  go def { waveFileFormat = WaveVanilla }
+
+-- | Read WAVE chunks.
+
+grabWaveChunks
+  :: Handle            -- ^ 'Handle' to read from
+  -> GiveUp            -- ^ How to give up
+  -> LiftGet           -- ^ How to lift parsers
+  -> Maybe Word64      -- ^ Size of data chunk to use if 0xffffffff is read
+  -> Maybe Word64      -- ^ Number of samples to use if 0xffffffff is read
+  -> Wave              -- ^ Apply modifications to this 'Wave'
+  -> IO Wave           -- ^ The result
+grabWaveChunks h giveup liftGet mdataSize msamplesTotal = go False
+  where
+    go seenFact wave = do
+      offset <- hTell h
+      Chunk {..} <- liftGet (readChunk h 0xffff)
+      case (chunkTag, chunkBody) of
+        ("data", _) -> do
+          let nonPcm = isNonPcm (waveSampleFormat wave)
+          when (nonPcm && not seenFact && isNothing msamplesTotal) $
+            giveup NonPcmFormatButMissingFact
+          let dataSize =
+                case (chunkSize == 0xffffffff, mdataSize) of
+                  (True, Just dataSize') -> dataSize'
+                  _ -> fromIntegral chunkSize
+          return wave
+            { waveDataOffset   = fromIntegral offset + 8
+            , waveDataSize     = dataSize
+            , waveSamplesTotal =
+                case (waveSamplesTotal wave == 0xffffffff, msamplesTotal) of
+                  (True, Just samplesTotal) -> samplesTotal
+                  _ ->
+                    if nonPcm
+                      then waveSamplesTotal wave
+                      else dataSize `quot` fromIntegral (waveBlockAlign wave)
+            , waveOtherChunks = reverse (waveOtherChunks wave) }
+        (tag, Nothing) ->
+          giveup (NonDataChunkIsTooLong tag)
+        ("fmt ", Just body) ->
+          liftGet (return $ readWaveFmt wave body) >>= go seenFact
+        ("fact", Just body) -> do
+          samplesTotal <- liftGet (return $ readFact body)
+          go True wave { waveSamplesTotal = fromIntegral samplesTotal }
+        (tag, Just body) ->
+          go seenFact
+            wave { waveOtherChunks = (tag, body) : waveOtherChunks wave }
+
+-- | Read a “ds64” chunk which contains RIFF chunk\/data chunk lengths as 64
+-- bit values and total number of samples.
 
 readDs64 :: ByteString -> Either String Ds64
 readDs64 bytes = flip S.runGet bytes $ do
@@ -417,11 +484,11 @@ readDs64 bytes = flip S.runGet bytes $ do
   ds64TotalSamples <- S.getWord64le
   return Ds64 {..}
 
--- | Parse WAVE format chunk from given 'ByteString'. Return error is 'Left'
+-- | Parse WAVE format chunk from given 'ByteString'. Return error in 'Left'
 -- in case of failure.
 
 readWaveFmt :: Wave -> ByteString -> Either String Wave
-readWaveFmt wave bytes = flip S.runGet bytes $ do
+readWaveFmt wave = S.runGet $ do
   format <- S.getWord16le
   unless ( format == waveFormatPcm       ||
            format == waveFormatIeeeFloat ||
@@ -457,14 +524,19 @@ readWaveFmt wave bytes = flip S.runGet bytes $ do
   when (ieeeFloat && not (bitsPerSample == 32 || bitsPerSample == 64)) $
     fail "The sample format is IEEE Float, but bits per sample is not 32 or 64"
   return wave
-    { waveSampleRate    = sampleRate
-    , waveSampleFormat  =
+    { waveSampleRate   = sampleRate
+    , waveSampleFormat =
       if ieeeFloat
         then if bitsPerSample == 32
                then SampleFormatIeeeFloat32Bit
                else SampleFormatIeeeFloat64Bit
         else SampleFormatPcmInt bitsPerSample
-    , waveChannelMask   = channelMask }
+    , waveChannelMask  = channelMask }
+
+-- | Read the “fact” chunk.
+
+readFact :: ByteString -> Either String Word32
+readFact = S.runGet S.getWord32le
 
 -- | Read a classic RIFF 'Chunk' (32 bit tag + 32 bit size).
 
