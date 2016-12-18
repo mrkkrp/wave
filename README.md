@@ -42,7 +42,7 @@ more detailed documentation, the usage should be trivial.
 
 ## Why
 
-I needed a package to work with WAVE files to finish
+I needed a way to work with WAVE files to finish
 my [`flac`](https://github.com/mrkkrp/flac) package and for analyzing input
 data in WAVE format in general. The existing solutions
 ([`WAVE`](https://hackage.haskell.org/package/WAVE),
