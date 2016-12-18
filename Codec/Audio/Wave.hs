@@ -61,10 +61,10 @@ module Codec.Audio.Wave
   , speakerStereo
   , speakerQuad
   , speakerSurround
-  , speaker5Point1
-  , speaker7Point1
-  , speaker5Point1Surround
-  , speaker7Point1Surround
+  , speaker5_1
+  , speaker7_1
+  , speaker5_1Surround
+  , speaker7_1Surround
     -- * Reading
   , readWaveFile
     -- * Writing
@@ -218,7 +218,7 @@ data Ds64 = Ds64
   { ds64RiffSize     :: !Word64 -- ^ Size of RIFF chunk (64 bits)
   , ds64DataSize     :: !Word64 -- ^ Size of data chunk (64 bits)
   , ds64SamplesTotal :: !Word64 -- ^ Total number of samples (64 bits)
-  } deriving (Show)
+  }
 
 instance Default Ds64 where
   def = Ds64
@@ -313,8 +313,8 @@ speakerSurround = E.fromList
 
 -- | L, R, C, Lb, Rb, low frequency (LFE).
 
-speaker5Point1 :: Set SpeakerPosition
-speaker5Point1 = E.fromList
+speaker5_1 :: Set SpeakerPosition
+speaker5_1 = E.fromList
   [ SpeakerFrontLeft
   , SpeakerFrontRight
   , SpeakerFrontCenter
@@ -324,8 +324,8 @@ speaker5Point1 = E.fromList
 
 -- | L, R, C, Lb, Rb, front left-of-center, front right-of-center, LFE.
 
-speaker7Point1 :: Set SpeakerPosition
-speaker7Point1 = E.fromList
+speaker7_1 :: Set SpeakerPosition
+speaker7_1 = E.fromList
   [ SpeakerFrontLeft
   , SpeakerFrontRight
   , SpeakerFrontCenter
@@ -337,8 +337,8 @@ speaker7Point1 = E.fromList
 
 -- | L, R, C, side left (Ls), side right (Rs), LFE.
 
-speaker5Point1Surround :: Set SpeakerPosition
-speaker5Point1Surround = E.fromList
+speaker5_1Surround :: Set SpeakerPosition
+speaker5_1Surround = E.fromList
   [ SpeakerFrontLeft
   , SpeakerFrontRight
   , SpeakerFrontCenter
@@ -348,8 +348,8 @@ speaker5Point1Surround = E.fromList
 
 -- | L, R, C, Lb, Rb, Ls, Rs, LFE.
 
-speaker7Point1Surround :: Set SpeakerPosition
-speaker7Point1Surround = E.fromList
+speaker7_1Surround :: Set SpeakerPosition
+speaker7_1Surround = E.fromList
   [ SpeakerFrontLeft
   , SpeakerFrontRight
   , SpeakerFrontCenter
