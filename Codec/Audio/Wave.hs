@@ -25,10 +25,11 @@
 --
 -- Another feature of the library is that it does not dictate how to
 -- read\/write audio data. What we give is the information about audio data
--- and offset in file where it begins. To write data user should use a
--- callback that receives a 'Handle' as argument. Size of data block is
--- deduced automatically for you. Exclusion of audio data from consideration
--- also makes the library pretty fast.
+-- and offset in file where it begins. To write data user may use a callback
+-- that receives a 'Handle' as argument. Size of data block is deduced
+-- automatically for you. Exclusion of audio data from consideration makes
+-- the library pretty fast and open to different ways to handle audio data
+-- itself, including using foreign code (such as C).
 --
 -- The library provides control over all parts of WAVE file that may be of
 -- interest. In particular, it even allows to write arbitrary chunks between
@@ -109,11 +110,10 @@ data Wave = Wave
     -- ^ Sample rate in Hz, default is: 44100.
   , waveSampleFormat :: !SampleFormat
     -- ^ Sample format. The library supports signed\/unsigned integers and
-    -- floats. Default value: @'SampleFormatPcmSigned' 16@.
+    -- floats. Default value: @'SampleFormatPcmInt' 16@.
   , waveChannelMask  :: !(Set SpeakerPosition)
-    -- ^ The channel mask as a 'Set' of 'SpeakerPosition's. Default value
-    -- contains just 'SpeakerFrontLeft' and 'SpeakerFrontRight' (normal
-    -- stereo signal).
+    -- ^ The channel mask as a 'Set' of 'SpeakerPosition's. Default value is
+    -- 'speakerStereo'.
   , waveDataOffset   :: !Word32
     -- ^ Offset in bytes from the beginning of file where actual sample data
     -- begins. Default value: 0.
@@ -365,8 +365,8 @@ speaker7Point1Surround = E.fromList
 -- | Read 'Wave' record from a WAVE file found at given path. This action
 -- throws 'WaveException' if the file is malformed and cannot be read.
 --
--- You can feed vanilla WAVE, RF64, and Sony Wave64 files. The actual format
--- is detected by actual contents of file, not extension.
+-- You can feed vanilla WAVE and RF64 files. The actual format is detected
+-- automatically from contents of the file, not by extension.
 --
 -- PCM with samples in form of integers and floats only are supported, see
 -- 'SampleFormat'. Addition of other formats will be performed on request,
