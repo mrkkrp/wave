@@ -7,8 +7,7 @@
 [![Build Status](https://travis-ci.org/mrkkrp/wave.svg?branch=master)](https://travis-ci.org/mrkkrp/wave)
 [![Coverage Status](https://coveralls.io/repos/mrkkrp/wave/badge.svg?branch=master&service=github)](https://coveralls.io/github/mrkkrp/wave?branch=master)
 
-This package allows you to work with WAVE, RF64, and WAVE64 files in
-Haskell. This is a work in progress.
+This package allows you to work with WAVE and RF64 files in Haskell.
 
 ## License
 

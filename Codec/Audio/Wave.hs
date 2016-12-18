@@ -8,13 +8,9 @@
 -- Portability :  portable
 --
 -- This module provides a safe interface that allows to manipulate WAVE
--- files in their “classic” form as well as files in the following extended
--- formats:
---
---     * RF64 <https://tech.ebu.ch/docs/tech/tech3306-2009.pdf>
---     * Sony Wave64 <http://www.ambisonia.com/Members/mleese/sony_wave64.pdf/sony_wave64.pdf>
---
--- The both formats add the ability to store files larger than 4 Gb.
+-- files in their “classic” form as well as files in the RF64 format
+-- <https://tech.ebu.ch/docs/tech/tech3306-2009.pdf>. RF64 adds the ability
+-- to store files larger than 4 Gb.
 --
 -- The main feature of the API is that it does not allow the user to
 -- duplicate information and introduce errors in that way. For example,
@@ -151,7 +147,6 @@ instance Default Wave where
 data WaveFormat
   = WaveVanilla        -- ^ Classic WAVE file, 4 Gb size limitation
   | WaveRF64           -- ^ WAVE file with RF64 extension
-  | Wave64             -- ^ Sony Wave64 format
   deriving (Show, Read, Eq, Ord, Bounded, Enum, Typeable, Data)
 
 -- | Sample formats with associated bit depth (when variable).
@@ -392,7 +387,6 @@ readWaveFile path = liftIO . withFile path ReadMode $ \h -> do
   case chunkTag outerChunk of
     "RIFF" -> readWaveVanilla h giveup liftGet
     "RF64" -> readWaveRF64    h giveup liftGet
-    -- TODO add something for Wave64 here
     _      -> giveup (BadFileFormat "Can't locate RIFF/RF64 tag")
 
 -- | Parse classic WAVE file.
@@ -594,7 +588,6 @@ writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h ->
   case waveFileFormat wave of
     WaveVanilla -> writeWaveVanilla h wave writeData
     WaveRF64    -> writeWaveRF64    h wave writeData
-    Wave64      -> undefined -- TODO
 
 -- | Write vanilla WAVE format.
 
