@@ -30,8 +30,9 @@
 -- Another feature of the library is that it does not dictate how to
 -- read\/write audio data. What we give is the information about audio data
 -- and offset in file where it begins. To write data user should use a
--- callback that receives a 'Handle' as argument. Exclusion of audio data
--- from consideration also makes the library pretty fast.
+-- callback that receives a 'Handle' as argument. Size of data block is
+-- deduced automatically for you. Exclusion of audio data from consideration
+-- also makes the library pretty fast.
 --
 -- The library provides control over all parts of WAVE file that may be of
 -- interest. In particular, it even allows to write arbitrary chunks between
@@ -120,7 +121,7 @@ data Wave = Wave
   , waveDataOffset   :: !Word32
     -- ^ Offset in bytes from the beginning of file where actual sample data
     -- begins. Default value: 0.
-  , waveDataSize     :: !Word32
+  , waveDataSize     :: !Word64
     -- ^ Size of audio data in bytes. Default value: 0.
   , waveOtherChunks  :: [(ByteString, ByteString)]
     -- ^ Other chunks as @(tag, body)@ pairs. Only first four bytes of @tag@
@@ -132,7 +133,7 @@ instance Default Wave where
   def = Wave
     { waveFileFormat   = WaveVanilla
     , waveSampleRate   = 44100
-    , waveSampleFormat = SampleFormatPcmSigned 16
+    , waveSampleFormat = SampleFormatPcmInt 16
     , waveChannelMask  = defaultSpeakerSet 2
     , waveDataSize     = 0
     , waveDataOffset   = 0
@@ -149,12 +150,9 @@ data WaveFormat
 -- | Sample formats with associated bit depth (when variable).
 
 data SampleFormat
-  = SampleFormatPcmUnsigned Word16
-    -- ^ Unsigned integers, the argument is the number of bits per sample (8
-    -- bit and less are encoded as unsigned integers).
-  | SampleFormatPcmSigned   Word16
-    -- ^ Signed integers, the argument is the number of bits per sample
-    -- (everything greater than 8 bits is encoded as signed integers).
+  = SampleFormatPcmInt Word16
+    -- ^ Unsigned\/signed integers, the argument is the number of bits per
+    -- sample (8 bit and less are encoded as unsigned integers).
   | SampleFormatIeeeFloat32Bit
     -- ^ Samples are 32 bit floating point numbers.
   | SampleFormatIeeeFloat64Bit
@@ -201,13 +199,27 @@ data WaveException
 instance Exception WaveException
 
 -- | A RIFF chunk allowing for different representations of its body. This
--- type is not pubilc.
+-- type is not public.
 
 data Chunk m = Chunk
   { chunkTag  :: ByteString   -- ^ Four-byte chunk tag
   , chunkSize :: Word32       -- ^ Chunk size
   , chunkBody :: m ByteString -- ^ Chunk body in some form
   }
+
+-- | A “ds64” chunk used in RF64 WAVE extension.
+
+data Ds64 = Ds64
+  { ds64RiffSize     :: Word64 -- ^ Size of RIFF chunk (64 bits)
+  , ds64DataSize     :: Word64 -- ^ Size of data chunk (64 bits)
+  , ds64TotalSamples :: Word64 -- ^ Total number of samples (64 bits)
+  }
+
+instance Default Ds64 where
+  def = Ds64
+    { ds64RiffSize     = 0
+    , ds64DataSize     = 0
+    , ds64TotalSamples = 0 }
 
 ----------------------------------------------------------------------------
 -- Derived information
@@ -229,10 +241,9 @@ waveBitRate = (/ 125) . fromIntegral . waveByteRate
 waveBitsPerSample :: Wave -> Word16
 waveBitsPerSample Wave {..} =
   case waveSampleFormat of
-    SampleFormatPcmUnsigned bps -> bps
-    SampleFormatPcmSigned   bps -> bps
-    SampleFormatIeeeFloat32Bit  -> 32
-    SampleFormatIeeeFloat64Bit  -> 64
+    SampleFormatPcmInt     bps -> bps
+    SampleFormatIeeeFloat32Bit -> 32
+    SampleFormatIeeeFloat64Bit -> 64
 
 -- | Block alignment of samples as number of bits per sample (rounded
 -- towards next multiplier of 8 if necessary) multiplied by number of
@@ -254,7 +265,7 @@ waveChannels Wave {..} = fromIntegral (E.size waveChannelMask)
 -- samples, so one second of 44.1 kHz audio will have 44100 samples
 -- regardless of the number of channels.
 
-waveSamplesTotal :: Wave -> Word32
+waveSamplesTotal :: Wave -> Word64
 waveSamplesTotal wave =
   waveDataSize wave `quot` fromIntegral (waveBlockAlign wave)
 
@@ -363,11 +374,22 @@ readWaveFile path = liftIO . withFile path ReadMode $ \h -> do
           Left msg -> throwIO (BadFileFormat msg path)
           Right x  -> return x
   outerChunk <- liftGet (readChunk h 0)
-  unless (chunkTag outerChunk == "RIFF") $
-    giveup (BadFileFormat "Can't locate the RIFF tag")
+  let riff = chunkTag outerChunk == "RIFF"
+      rf64 = chunkTag outerChunk == "RF64"
+  unless (riff || rf64) $
+    giveup (BadFileFormat "Can't locate the RIFF/RF64 tag")
   waveId <- B.hGet h 4
   unless (waveId == "WAVE") $
     giveup (BadFileFormat "Can't find WAVE format tag")
+  Ds64 {..} <- if rf64
+    then do
+      mds64 <- liftGet (readChunk h 0xffff)
+      unless (chunkTag mds64 == "ds64") $
+        giveup (BadFileFormat "Can't find ds64 chunk")
+      case chunkBody mds64 of
+        Nothing -> giveup (NonDataChunkIsTooLong "ds64")
+        Just body -> liftGet (return $ readDs64 body)
+    else return def
   let go wave = do
         offset <- hTell h
         Chunk {..} <- liftGet (readChunk h 0xffff)
@@ -375,7 +397,10 @@ readWaveFile path = liftIO . withFile path ReadMode $ \h -> do
           ("data", _) ->
             return wave
               { waveDataOffset  = fromIntegral offset + 8
-              , waveDataSize    = chunkSize
+              , waveDataSize    =
+                  if rf64
+                    then ds64DataSize
+                    else fromIntegral chunkSize
               , waveOtherChunks = reverse (waveOtherChunks wave) }
           (tag, Nothing) ->
             giveup (NonDataChunkIsTooLong tag)
@@ -384,6 +409,13 @@ readWaveFile path = liftIO . withFile path ReadMode $ \h -> do
           (tag, Just body) ->
             go wave { waveOtherChunks = (tag, body) : waveOtherChunks wave }
   go def { waveFileFormat = WaveVanilla }
+
+readDs64 :: ByteString -> Either String Ds64
+readDs64 bytes = flip S.runGet bytes $ do
+  ds64RiffSize     <- S.getWord64le
+  ds64DataSize     <- S.getWord64le
+  ds64TotalSamples <- S.getWord64le
+  return Ds64 {..}
 
 -- | Parse WAVE format chunk from given 'ByteString'. Return error is 'Left'
 -- in case of failure.
@@ -431,9 +463,7 @@ readWaveFmt wave bytes = flip S.runGet bytes $ do
         then if bitsPerSample == 32
                then SampleFormatIeeeFloat32Bit
                else SampleFormatIeeeFloat64Bit
-        else if bitsPerSample <= 8
-               then SampleFormatPcmUnsigned bitsPerSample
-               else SampleFormatPcmSigned   bitsPerSample
+        else SampleFormatPcmInt bitsPerSample
     , waveChannelMask   = channelMask }
 
 -- | Read a classic RIFF 'Chunk' (32 bit tag + 32 bit size).
@@ -510,8 +540,8 @@ writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h -> do
       riffSize = fromIntegral (afterData - beforeOuter - 8)
   when nonPcm $ do
     hSeek h AbsoluteSeek beforeFact
-    let samplesTotal = waveSamplesTotal wave { waveDataSize = dataSize }
-    writeBsChunk "fact" (S.runPut (S.putWord32le samplesTotal))
+    let samplesTotal = waveSamplesTotal wave { waveDataSize = fromIntegral dataSize } -- FIXME
+    writeBsChunk "fact" (S.runPut (S.putWord32le (fromIntegral samplesTotal))) -- FIXME
   hSeek h AbsoluteSeek beforeData
   writeChunk h (Chunk "data" dataSize writeNoData)
   hSeek h AbsoluteSeek beforeOuter
@@ -523,8 +553,7 @@ renderFmtChunk :: Wave -> ByteString
 renderFmtChunk wave@Wave {..} = S.runPut $ do
   let extensible = isExtensibleFmt wave
       fmt = case waveSampleFormat of
-        SampleFormatPcmUnsigned  _ -> waveFormatPcm
-        SampleFormatPcmSigned    _ -> waveFormatPcm
+        SampleFormatPcmInt       _ -> waveFormatPcm
         SampleFormatIeeeFloat32Bit -> waveFormatIeeeFloat
         SampleFormatIeeeFloat64Bit -> waveFormatIeeeFloat
       bps = waveBitsPerSample wave
@@ -539,8 +568,7 @@ renderFmtChunk wave@Wave {..} = S.runPut $ do
     S.putWord16le bps
     S.putWord32le (toSpeakerMask waveChannelMask)
     S.putByteString $ case waveSampleFormat of
-      SampleFormatPcmUnsigned  _ -> ksdataformatSubtypePcm
-      SampleFormatPcmSigned    _ -> ksdataformatSubtypePcm
+      SampleFormatPcmInt       _ -> ksdataformatSubtypePcm
       SampleFormatIeeeFloat32Bit -> ksdataformatSubtypeIeeeFloat
       SampleFormatIeeeFloat64Bit -> ksdataformatSubtypeIeeeFloat
   unless extensible $
@@ -655,8 +683,7 @@ isExtensibleFmt wave@Wave {..} =
 -- | Determine if given 'SampleFormat' is not PCM.
 
 isNonPcm :: SampleFormat -> Bool
-isNonPcm (SampleFormatPcmUnsigned _) = False
-isNonPcm (SampleFormatPcmSigned   _) = False
+isNonPcm (SampleFormatPcmInt      _) = False
 isNonPcm SampleFormatIeeeFloat32Bit  = True
 isNonPcm SampleFormatIeeeFloat64Bit  = True
 

@@ -42,7 +42,7 @@ where
 
 import Codec.Audio.Wave
 import Data.ByteString (ByteString)
-import Data.Word (Word32)
+import Data.Word
 import System.IO
 import System.IO.Temp (withSystemTempFile)
 import Test.Hspec
@@ -73,7 +73,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/2ch-8000hz-8bit.wav"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 8000
-      waveSampleFormat    `shouldBe` SampleFormatPcmUnsigned 8
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 8
       waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 11376
@@ -90,7 +90,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/2ch-11025hz-24bit.wav"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 11025
-      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 24
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 24
       waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 23274
@@ -107,7 +107,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/1ch-44100hz-16bit.wav"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 44100
-      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 16
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 16
       waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 5046
@@ -161,7 +161,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/2ch-8000hz-8bit-x.wav"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 8000
-      waveSampleFormat    `shouldBe` SampleFormatPcmUnsigned 8
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 8
       waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 11376
@@ -178,7 +178,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/2ch-11025hz-24bit-x.wav"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 11025
-      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 24
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 24
       waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 23274
@@ -195,7 +195,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/1ch-44100hz-16bit-x.wav"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 44100
-      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 16
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 16
       waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 80
       waveDataSize        `shouldBe` 5046
@@ -249,9 +249,9 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/2ch-8000hz-8bit.rf64"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 8000
-      waveSampleFormat    `shouldBe` SampleFormatPcmUnsigned 8
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 8
       waveChannelMask     `shouldBe` speakerStereo
-      waveDataOffset      `shouldBe` 44
+      waveDataOffset      `shouldBe` 104
       waveDataSize        `shouldBe` 11376
       waveOtherChunks     `shouldBe` []
       waveByteRate      w `shouldBe` 16000
@@ -266,9 +266,9 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/2ch-11025hz-24bit.rf64"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 11025
-      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 24
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 24
       waveChannelMask     `shouldBe` speakerStereo
-      waveDataOffset      `shouldBe` 44
+      waveDataOffset      `shouldBe` 104
       waveDataSize        `shouldBe` 23274
       waveOtherChunks     `shouldBe` []
       waveByteRate      w `shouldBe` 66150
@@ -283,9 +283,9 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/1ch-44100hz-16bit.rf64"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 44100
-      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 16
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 16
       waveChannelMask     `shouldBe` speakerMono
-      waveDataOffset      `shouldBe` 44
+      waveDataOffset      `shouldBe` 104
       waveDataSize        `shouldBe` 5046
       waveOtherChunks     `shouldBe` []
       waveByteRate      w `shouldBe` 88200
@@ -302,10 +302,9 @@ spec = do
       waveSampleRate      `shouldBe` 48000
       waveSampleFormat    `shouldBe` SampleFormatIeeeFloat32Bit
       waveChannelMask     `shouldBe` speakerMono
-      waveDataOffset      `shouldBe` 80
+      waveDataOffset      `shouldBe` 104
       waveDataSize        `shouldBe` 48140
-      waveOtherChunks     `shouldBe`
-        [("fact","\ETX/\NUL\NUL"),("PEAK","\SOH\NUL\NUL\NUL\139\214FX\205\204L?,\SOH\NUL\NUL")]
+      waveOtherChunks     `shouldBe` []
       waveByteRate      w `shouldBe` 192000
       waveBitRate       w `shouldBe` 1536.0
       waveBitsPerSample w `shouldBe` 32
@@ -320,10 +319,9 @@ spec = do
       waveSampleRate      `shouldBe` 16000
       waveSampleFormat    `shouldBe` SampleFormatIeeeFloat64Bit
       waveChannelMask     `shouldBe` speakerMono
-      waveDataOffset      `shouldBe` 80
+      waveDataOffset      `shouldBe` 104
       waveDataSize        `shouldBe` 104080
-      waveOtherChunks     `shouldBe`
-        [("fact","\210\&2\NUL\NUL"),("PEAK","\SOH\NUL\NUL\NUL\243\215FX\205\204L?d\NUL\NUL\NUL")]
+      waveOtherChunks     `shouldBe` []
       waveByteRate      w `shouldBe` 128000
       waveBitRate       w `shouldBe` 1024.0
       waveBitsPerSample w `shouldBe` 64
@@ -337,7 +335,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/2ch-8000hz-8bit.w64"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 8000
-      waveSampleFormat    `shouldBe` SampleFormatPcmUnsigned 8
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 8
       waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 11376
@@ -354,7 +352,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/2ch-11025hz-24bit.w64"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 11025
-      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 24
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 24
       waveChannelMask     `shouldBe` speakerStereo
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 23274
@@ -371,7 +369,7 @@ spec = do
       w@Wave {..} <- readWaveFile "audio-samples/1ch-44100hz-16bit.w64"
       waveFileFormat      `shouldBe` WaveVanilla
       waveSampleRate      `shouldBe` 44100
-      waveSampleFormat    `shouldBe` SampleFormatPcmSigned 16
+      waveSampleFormat    `shouldBe` SampleFormatPcmInt 16
       waveChannelMask     `shouldBe` speakerMono
       waveDataOffset      `shouldBe` 44
       waveDataSize        `shouldBe` 5046
@@ -446,10 +444,8 @@ instance Arbitrary Wave where
   arbitrary = do
     waveFileFormat <- elements [minBound..maxBound]
     waveSampleRate <- arbitrary
-    let normalUnsigned n = n > 0 && n <= 8
     waveSampleFormat <- oneof
-      [ SampleFormatPcmUnsigned <$> arbitrary `suchThat` normalUnsigned
-      , SampleFormatPcmSigned   <$> arbitrary `suchThat` (>  8)
+      [ SampleFormatPcmInt . getPositive <$> arbitrary
       , pure SampleFormatIeeeFloat32Bit
       , pure SampleFormatIeeeFloat64Bit ]
     waveChannelMask <- arbitrary `suchThat` (not . E.null)
@@ -478,7 +474,7 @@ withSandbox action = withSystemTempFile "sample.wav" $ \path h -> do
 
 -- | Write specified number of NULL bytes to given 'Handle'.
 
-writeBytes :: Word32 -> Handle -> IO ()
+writeBytes :: Word64 -> Handle -> IO ()
 writeBytes 0  _ = return ()
 writeBytes !n h = hPutChar h '\NUL' >> writeBytes (n - 1) h
 
@@ -487,18 +483,17 @@ writeBytes !n h = hPutChar h '\NUL' >> writeBytes (n - 1) h
 factChunk :: Wave -> (ByteString, ByteString)
 factChunk wave = ("fact", body)
   where
-    body = (S.runPut . S.putWord32le . waveSamplesTotal) wave
+    body = (S.runPut . S.putWord32le . fromIntegral . waveSamplesTotal) wave
 
 -- | Get total length of custom chunks.
 
-totalExtraLength :: Wave -> Word32
+totalExtraLength :: Wave -> Word64
 totalExtraLength =
   fromIntegral . sum . fmap (B.length . snd) . waveOtherChunks
 
 -- | Determine if given 'SampleFormat' is not PCM.
 
 isNonPcm :: SampleFormat -> Bool
-isNonPcm (SampleFormatPcmUnsigned _) = False
-isNonPcm (SampleFormatPcmSigned   _) = False
+isNonPcm (SampleFormatPcmInt      _) = False
 isNonPcm SampleFormatIeeeFloat32Bit  = True
 isNonPcm SampleFormatIeeeFloat64Bit  = True
