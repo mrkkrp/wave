@@ -424,10 +424,7 @@ spec = do
               if odd (dataSize + totalExtraLength wave)
                 then dataSize + 1
                 else dataSize
-            samplesTotal =
-              if isNonPcm (waveSampleFormat wave)
-                then waveSamplesTotal wave
-                else pcmSamplesTotal wave { waveDataSize = dataSize' }
+            samplesTotal = pcmSamplesTotal wave { waveDataSize = dataSize' }
         writeWaveFile path wave (writeBytes dataSize)
         wave' <- readWaveFile path
         wave' `shouldBe` wave
@@ -483,13 +480,6 @@ writeBytes !n h = hPutChar h '\NUL' >> writeBytes (n - 1) h
 totalExtraLength :: Wave -> Word64
 totalExtraLength =
   fromIntegral . sum . fmap (B.length . snd) . waveOtherChunks
-
--- | Determine if given 'SampleFormat' is not PCM.
-
-isNonPcm :: SampleFormat -> Bool
-isNonPcm (SampleFormatPcmInt      _) = False
-isNonPcm SampleFormatIeeeFloat32Bit  = True
-isNonPcm SampleFormatIeeeFloat64Bit  = True
 
 -- | Estimate total number of samples for a PCM audio stream.
 

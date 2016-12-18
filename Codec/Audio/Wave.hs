@@ -212,18 +212,25 @@ instance Exception WaveException
 -- type is not public.
 
 data Chunk m = Chunk
-  { chunkTag  :: ByteString   -- ^ Four-byte chunk tag
-  , chunkSize :: Word32       -- ^ Chunk size
-  , chunkBody :: m ByteString -- ^ Chunk body in some form
+  { chunkTag  :: !ByteString   -- ^ Four-byte chunk tag
+  , chunkSize :: !Word32       -- ^ Chunk size
+  , chunkBody :: !(m ByteString) -- ^ Chunk body in some form
   }
 
 -- | A “ds64” chunk used in RF64 WAVE extension. This type is not public.
 
 data Ds64 = Ds64
-  { ds64RiffSize     :: Word64 -- ^ Size of RIFF chunk (64 bits)
-  , ds64DataSize     :: Word64 -- ^ Size of data chunk (64 bits)
-  , ds64TotalSamples :: Word64 -- ^ Total number of samples (64 bits)
-  }
+  { ds64RiffSize     :: !Word64 -- ^ Size of RIFF chunk (64 bits)
+  , ds64DataSize     :: !Word64 -- ^ Size of data chunk (64 bits)
+  , ds64SamplesTotal :: !Word64 -- ^ Total number of samples (64 bits)
+  } deriving (Show)
+
+instance Default Ds64 where
+  def = Ds64
+    { ds64RiffSize     = 0
+    , ds64DataSize     = 0
+    , ds64SamplesTotal = 0
+    }
 
 -- | A helper type synonym for give up function signatures.
 
@@ -415,7 +422,7 @@ readWaveRF64 h giveup liftGet = do
   Ds64 {..} <- case chunkBody mds64 of
     Nothing -> giveup (NonDataChunkIsTooLong "ds64")
     Just body -> liftGet (return $ readDs64 body)
-  grabWaveChunks h giveup liftGet (Just ds64DataSize) (Just ds64TotalSamples)
+  grabWaveChunks h giveup liftGet (Just ds64DataSize) (Just ds64SamplesTotal)
     def { waveFileFormat   = WaveRF64
         , waveSamplesTotal = 0xffffffff }
 
@@ -461,7 +468,7 @@ grabWaveChunks h giveup liftGet mdataSize msamplesTotal = go False
                   _ ->
                     if nonPcm
                       then waveSamplesTotal wave
-                      else dataSize `quot` fromIntegral (waveBlockAlign wave)
+                      else pcmSamplesTotal wave { waveDataSize = dataSize }
             , waveOtherChunks = reverse (waveOtherChunks wave) }
         (tag, Nothing) ->
           giveup (NonDataChunkIsTooLong tag)
@@ -481,7 +488,7 @@ readDs64 :: ByteString -> Either String Ds64
 readDs64 bytes = flip S.runGet bytes $ do
   ds64RiffSize     <- S.getWord64le
   ds64DataSize     <- S.getWord64le
-  ds64TotalSamples <- S.getWord64le
+  ds64SamplesTotal <- S.getWord64le
   return Ds64 {..}
 
 -- | Parse WAVE format chunk from given 'ByteString'. Return error in 'Left'
@@ -570,35 +577,47 @@ readChunk h maxSize = do
 -- the requirement that WAVE data should end on “even byte boundary”. The
 -- pad byte is written for you if necessary and included in data size.
 --
+-- The 'waveSamplesTotal' field will be inferred for PCM (including formats
+-- with samples represented as floats, i.e. always right now), so the
+-- provided value is not used.
+--
 -- If 'Wave' specifies floating point sample format, the “fact” chunk is
 -- automatically generated and written (the chunk is required for all
--- non-PCM formats by the spec).
+-- non-PCM formats by the spec), but only for vanilla WAVE.
 
 writeWaveFile :: MonadIO m
   => FilePath          -- ^ Where to save the file
   -> Wave              -- ^ Parameters of the WAVE file
   -> (Handle -> IO ()) -- ^ Callback that will be used to write WAVE data
   -> m ()
-writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h -> do
-  let writeNoData = (Left . const . return) ()
-      writeBsChunk chunkTag body =
-        let chunkSize = fromIntegral (B.length body)
-            chunkBody = Right body
-        in writeChunk h Chunk {..}
-      nonPcm = isNonPcm (waveSampleFormat wave)
+writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h ->
+  case waveFileFormat wave of
+    WaveVanilla -> writeWaveVanilla h wave writeData
+    WaveRF64    -> writeWaveRF64    h wave writeData
+    Wave64      -> undefined -- TODO
+
+-- | Write vanilla WAVE format.
+
+writeWaveVanilla
+  :: Handle            -- ^ 'Handle' to write to
+  -> Wave              -- ^ Parameters of the WAVE file
+  -> (Handle -> IO ()) -- ^ Callback that writes WAVE data
+  -> IO ()
+writeWaveVanilla h wave writeData = do
+  let nonPcm = isNonPcm (waveSampleFormat wave)
   -- Write the outer RIFF chunk.
   beforeOuter <- hTell h
   writeChunk h (Chunk "RIFF" 0 writeNoData)
   -- Write the WAVE format tag.
   B.hPut h "WAVE"
   -- Write fmt chunk.
-  writeBsChunk "fmt " (renderFmtChunk wave)
+  writeBsChunk h "fmt " (renderFmtChunk wave)
   -- Write a dummy fact chunk if necessary.
   beforeFact <- hTell h
   when nonPcm $
-    writeBsChunk "fact" "????"
+    writeBsChunk h "fact" "????"
   -- Write any extra chunks if present.
-  forM_ (waveOtherChunks wave) (uncurry writeBsChunk)
+  forM_ (waveOtherChunks wave) (uncurry $ writeBsChunk h)
   -- Write data chunk.
   beforeData <- hTell h
   writeChunk h (Chunk "data" 0 (Left writeData))
@@ -608,16 +627,72 @@ writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h -> do
     B.hPut h "\0"
   -- Go back and overwrite dummy values.
   afterData  <- hTell h
-  let dataSize = fromIntegral (afterData - beforeData - 8)
-      riffSize = fromIntegral (afterData - beforeOuter - 8)
+  let riffSize = fromIntegral (afterData - beforeOuter - 8)
+      dataSize = fromIntegral (afterData - beforeData - 8)
+      samplesTotal = fromIntegral $
+        pcmSamplesTotal wave { waveDataSize = fromIntegral dataSize }
   when nonPcm $ do
     hSeek h AbsoluteSeek beforeFact
-    let samplesTotal = waveSamplesTotal wave { waveDataSize = fromIntegral dataSize } -- FIXME
-    writeBsChunk "fact" (S.runPut (S.putWord32le (fromIntegral samplesTotal))) -- FIXME
+    writeBsChunk h "fact" (renderFactChunk samplesTotal)
   hSeek h AbsoluteSeek beforeData
   writeChunk h (Chunk "data" dataSize writeNoData)
   hSeek h AbsoluteSeek beforeOuter
   writeChunk h (Chunk "RIFF" riffSize writeNoData)
+
+writeWaveRF64 :: Handle -> Wave -> (Handle -> IO ()) -> IO ()
+writeWaveRF64 h wave writeData = do
+  -- Write the outer RF64 chunk.
+  beforeOuter <- hTell h
+  writeChunk h (Chunk "RF64" 0xffffffff writeNoData)
+  -- Write the WAVE format tag.
+  B.hPut h "WAVE"
+  -- Write ds64 chunk.
+  beforeDs64 <- hTell h
+  writeBsChunk h "ds64" (renderDs64Chunk def)
+  -- Write fmt chunk.
+  writeBsChunk h "fmt " (renderFmtChunk wave)
+  -- Write any extra chunks if present.
+  forM_ (waveOtherChunks wave) (uncurry $ writeBsChunk h)
+  -- Write data chunk.
+  beforeData <- hTell h
+  writeChunk h (Chunk "data" 0xffffffff (Left writeData))
+  -- Take care of alignment.
+  rightAfterData <- hTell h
+  when (odd rightAfterData) $
+    B.hPut h "\0"
+  -- Go back and overwrite dummy values.
+  afterData  <- hTell h
+  let ds64RiffSize     = fromIntegral (afterData - beforeOuter - 8)
+      ds64DataSize     = fromIntegral (afterData - beforeData - 8)
+      ds64SamplesTotal = pcmSamplesTotal wave { waveDataSize = ds64DataSize }
+      ds64Chunk        = Ds64 {..}
+  hSeek h AbsoluteSeek beforeDs64
+  writeBsChunk h "ds64" (renderDs64Chunk ds64Chunk)
+
+-- | Write no data, at all.
+
+writeNoData :: Either (Handle -> IO ()) a
+writeNoData = (Left . const . return) ()
+
+-- | Write a chunk given its tag and body as strict 'ByteString's.
+
+writeBsChunk
+  :: Handle            -- ^ 'Handle' where to write
+  -> ByteString        -- ^ Chunk tag
+  -> ByteString        -- ^ Chunk body
+  -> IO ()
+writeBsChunk h chunkTag body =
+  let chunkSize = fromIntegral (B.length body)
+      chunkBody = Right body
+  in writeChunk h Chunk {..}
+
+-- | Render a “ds64” chunk as a stirct 'ByteString'.
+
+renderDs64Chunk :: Ds64 -> ByteString
+renderDs64Chunk Ds64 {..} = S.runPut $ do
+  S.putWord64le ds64RiffSize
+  S.putWord64le ds64DataSize
+  S.putWord64le ds64SamplesTotal
 
 -- | Render format chunk as a strict 'ByteString' from a given 'Wave'.
 
@@ -645,6 +720,11 @@ renderFmtChunk wave@Wave {..} = S.runPut $ do
       SampleFormatIeeeFloat64Bit -> ksdataformatSubtypeIeeeFloat
   unless extensible $
     S.putWord16le 0
+
+-- | Render fact chunk as a strict 'ByteString'.
+
+renderFactChunk :: Word32 -> ByteString
+renderFactChunk = S.runPut . S.putWord32le
 
 -- | Write a RIFF 'Chunk'. It's the responsibility of the programmer to
 -- ensure that specified size matches size of body that is actually written.
@@ -765,3 +845,9 @@ roundBitsPerSample :: Word16 -> Word16
 roundBitsPerSample n = if r /= 0 then (x + 1) * 8 else n
   where
     (x,r) = n `quotRem` 8
+
+-- | Estimate total number of samples for a PCM audio stream.
+
+pcmSamplesTotal :: Wave -> Word64
+pcmSamplesTotal wave =
+  waveDataSize wave `quot` fromIntegral (waveBlockAlign wave)
