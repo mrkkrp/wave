@@ -46,6 +46,7 @@ description:          Work with WAVE and RF64 files.
 extra-doc-files:      CHANGELOG.md
                     , README.md
 data-files:           audio-samples/*.wav
+                    , audio-samples/*.rf64
 
 source-repository head
   type:               git
