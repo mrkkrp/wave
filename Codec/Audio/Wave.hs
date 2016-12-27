@@ -376,7 +376,7 @@ speaker7_1Surround = E.fromList
 readWaveFile :: MonadIO m
   => FilePath          -- ^ Location of file to read
   -> m Wave
-readWaveFile path = liftIO . withFile path ReadMode $ \h -> do
+readWaveFile path = liftIO . withBinaryFile path ReadMode $ \h -> do
   let giveup f = throwIO (f path)
       liftGet m = do
         r <- m
@@ -584,7 +584,7 @@ writeWaveFile :: MonadIO m
   -> Wave              -- ^ Parameters of the WAVE file
   -> (Handle -> IO ()) -- ^ Callback that will be used to write WAVE data
   -> m ()
-writeWaveFile path wave writeData = liftIO . withFile path WriteMode $ \h ->
+writeWaveFile path wave writeData = liftIO . withBinaryFile path WriteMode $ \h ->
   case waveFileFormat wave of
     WaveVanilla -> writeWaveVanilla h wave writeData
     WaveRF64    -> writeWaveRF64    h wave writeData
