@@ -372,6 +372,19 @@ speaker7_1Surround = E.fromList
 -- 'SampleFormat'. Addition of other formats will be performed on request,
 -- please feel free to contact me at
 -- <https://github.com/mrkkrp/wave/issues>.
+--
+-- Finally, if “fmt” chunk is not extensible, we try to guess channel mask
+-- from number of channels alone, here is how:
+--
+--     * 1 channel: front center (C)
+--     * 2 channels: front left (L), front right (R)
+--     * 3 channels: L, R, C
+--     * 4 channels: L, R, back left (Lb), back right (Rb)
+--     * 5 channels: L, R, C, Lb, Rb
+--     * 6 channels: L, R, C, LFE, Lb, Rb
+--     * 7 channels: L, R, C, LFE, back center (Cb), side left (Ls), side right (Rs)
+--     * 8 channels: L, R, C, LFE, Lb, Rb, Ls, Rs
+--     * N channels: first N items are taken from @[minBound..maxBound]@ of 'SpeakerPosition's
 
 readWaveFile :: MonadIO m
   => FilePath          -- ^ Location of file to read
@@ -813,8 +826,12 @@ defaultSpeakerSet n = case n of
   0 -> E.empty
   1 -> speakerMono
   2 -> speakerStereo
-  3 -> E.fromList [SpeakerFrontLeft,SpeakerFrontCenter,SpeakerFrontRight]
-  4 -> speakerSurround
+  3 -> E.fromList [SpeakerFrontLeft,SpeakerFrontRight,SpeakerFrontCenter]
+  4 -> speakerQuad
+  5 -> E.insert SpeakerFrontCenter speakerQuad
+  6 -> speaker5_1
+  7 -> E.insert SpeakerBackCenter speaker5_1Surround
+  8 -> speaker7_1Surround
   x -> E.fromList $ take (fromIntegral x) [minBound..maxBound]
 
 -- | Does this 'Wave' record requires extensible format chunk to be used?
