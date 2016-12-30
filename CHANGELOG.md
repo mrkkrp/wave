@@ -1,3 +1,8 @@
+## Wave 0.1.4
+
+* The library now doesn't write zero extra format information size when
+  `fmt` chunk is not extensible. Previously it wrote zero size.
+
 ## Wave 0.1.3
 
 * Adjust and document guessing of channel mask from number of channels alone

@@ -724,8 +724,6 @@ renderFmtChunk wave@Wave {..} = S.runPut $ do
       SampleFormatPcmInt       _ -> ksdataformatSubtypePcm
       SampleFormatIeeeFloat32Bit -> ksdataformatSubtypeIeeeFloat
       SampleFormatIeeeFloat64Bit -> ksdataformatSubtypeIeeeFloat
-  unless extensible $
-    S.putWord16le 0
 
 -- | Render fact chunk as a strict 'ByteString'.
 
