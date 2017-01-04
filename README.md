@@ -12,8 +12,6 @@ in their “classic” form as well as files in
 the [RF64 format](https://tech.ebu.ch/docs/tech/tech3306-2009.pdf). RF64
 adds the ability to store files larger than 4 Gb.
 
-## What
-
 The main feature of the API is that it does not allow the user to duplicate
 information and introduce errors in that way. For example, block align may
 be calculated from other parameters of audio stream, thus we do not store it
@@ -40,7 +38,7 @@ confuse buggy applications that don't know how to skip unknown chunks).
 Please [read the Haddocks](https://hackage.haskell.org/package/wave) for a
 more detailed documentation, the usage should be trivial.
 
-## Why
+## Motivation
 
 I needed a way to work with WAVE files to finish
 my [`flac`](https://github.com/mrkkrp/flac) package and for analyzing input
