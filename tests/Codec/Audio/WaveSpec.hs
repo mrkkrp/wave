@@ -59,9 +59,9 @@ import Control.Applicative
 -- we generate random WAVE files and write them to temporary files, then
 -- read the files back and compare. This way we ensure that 1) the library
 -- supports reading arbitrary valid files 2) since reading is valid, we can
--- assume that writing is valid too if the read results looks OK.
+-- assume that writing is valid too if the read results look OK.
 --
--- If any problems will be discovered in the future, it's simple to extend
+-- Should any problems be discovered in the future, it's simple to extend
 -- the first part of the test suite to check for those cases.
 
 spec :: Spec
@@ -408,7 +408,7 @@ withSandbox action = withSystemTempFile "sample.wav" $ \path h -> do
   hClose h
   action path
 
--- | Write specified number of NULL bytes to given 'Handle'.
+-- | Write the specified number of NULL bytes to given 'Handle'.
 
 writeBytes :: Word64 -> Handle -> IO ()
 writeBytes 0  _ = return ()
@@ -420,7 +420,7 @@ totalExtraLength :: Wave -> Word64
 totalExtraLength =
   fromIntegral . sum . fmap (B.length . snd) . waveOtherChunks
 
--- | Estimate total number of samples for a PCM audio stream.
+-- | Estimate the total number of samples for a PCM audio stream.
 
 pcmSamplesTotal :: Wave -> Word64
 pcmSamplesTotal wave =

@@ -224,8 +224,7 @@ instance Default Ds64 where
   def = Ds64
     { ds64RiffSize     = 0
     , ds64DataSize     = 0
-    , ds64SamplesTotal = 0
-    }
+    , ds64SamplesTotal = 0 }
 
 -- | A helper type synonym for give up function signatures.
 
@@ -402,7 +401,7 @@ readWaveFile path = liftIO . withBinaryFile path ReadMode $ \h -> do
     "RF64" -> readWaveRF64    h giveup liftGet
     _      -> giveup (BadFileFormat "Can't locate RIFF/RF64 tag")
 
--- | Parse classic WAVE file.
+-- | Parse a classic WAVE file.
 
 readWaveVanilla
   :: Handle            -- ^ 'Handle' to read from
@@ -414,7 +413,7 @@ readWaveVanilla h giveup liftGet = do
   grabWaveChunks h giveup liftGet Nothing Nothing
     def { waveFileFormat = WaveVanilla } -- just to be explicit
 
--- | Parse RF64 file.
+-- | Parse an RF64 file.
 
 readWaveRF64
   :: Handle            -- ^ 'Handle' to read from
@@ -489,7 +488,7 @@ grabWaveChunks h giveup liftGet mdataSize msamplesTotal = go False
             wave { waveOtherChunks = (tag, body) : waveOtherChunks wave }
 
 -- | Read a “ds64” chunk which contains RIFF chunk\/data chunk lengths as 64
--- bit values and total number of samples.
+-- bit values and the total number of samples.
 
 readDs64 :: ByteString -> Either String Ds64
 readDs64 bytes = flip S.runGet bytes $ do
@@ -498,8 +497,8 @@ readDs64 bytes = flip S.runGet bytes $ do
   ds64SamplesTotal <- S.getWord64le
   return Ds64 {..}
 
--- | Parse WAVE format chunk from given 'ByteString'. Return error in 'Left'
--- in case of failure.
+-- | Parse the WAVE format chunk from given 'ByteString'. Return error in
+-- 'Left' in case of failure.
 
 readWaveFmt :: Wave -> ByteString -> Either String Wave
 readWaveFmt wave = S.runGet $ do
@@ -602,7 +601,7 @@ writeWaveFile path wave writeData = liftIO . withBinaryFile path WriteMode $ \h 
     WaveVanilla -> writeWaveVanilla h wave writeData
     WaveRF64    -> writeWaveRF64    h wave writeData
 
--- | Write vanilla WAVE format.
+-- | Write a vanilla WAVE file.
 
 writeWaveVanilla
   :: Handle            -- ^ 'Handle' to write to
@@ -645,6 +644,8 @@ writeWaveVanilla h wave writeData = do
   hSeek h AbsoluteSeek beforeOuter
   writeChunk h (Chunk "RIFF" riffSize writeNoData)
 
+-- | Write an RF64 file.
+
 writeWaveRF64 :: Handle -> Wave -> (Handle -> IO ()) -> IO ()
 writeWaveRF64 h wave writeData = do
   -- Write the outer RF64 chunk.
@@ -675,7 +676,7 @@ writeWaveRF64 h wave writeData = do
   hSeek h AbsoluteSeek beforeDs64
   writeBsChunk h "ds64" (renderDs64Chunk ds64Chunk)
 
--- | Write no data, at all.
+-- | Write no data at all.
 
 writeNoData :: Either (Handle -> IO ()) a
 writeNoData = (Left . const . return) ()
