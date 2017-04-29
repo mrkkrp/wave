@@ -84,7 +84,7 @@ test-suite tests
                     , data-default-class
                     , hspec            >= 2.0    && < 3.0
                     , temporary        >= 1.1    && < 1.3
-                    , wave             >= 0.1.4
+                    , wave
   if flag(dev)
     ghc-options:      -Wall -Werror
   else
