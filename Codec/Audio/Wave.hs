@@ -20,16 +20,16 @@
 -- 'waveBlockAlign'. The same is done for channels. Channel mask is a more
 -- general means of providing information about number of channels and
 -- corresponding speaker positions, thus we only store channel mask in
--- user-friendly form, but number of channels can be derived from that
+-- user-friendly form, and number of channels can be derived from that
 -- information.
 --
 -- Another feature of the library is that it does not dictate how to
 -- read\/write audio data. What we give is the information about audio data
--- and offset in file where it begins. To write data user may use a callback
--- that receives a 'Handle' as argument. Size of data block is deduced
--- automatically for you. Exclusion of audio data from consideration makes
--- the library pretty fast and open to different ways to handle audio data
--- itself, including using foreign code (such as C).
+-- and offset in file where it begins. To write data the user may use a
+-- callback that receives a 'Handle' as an argument. Size of data block is
+-- deduced automatically for you. Exclusion of audio data from consideration
+-- makes the library pretty fast and open to different ways to handle audio
+-- data itself, including using foreign code (such as C).
 --
 -- The library provides control over all parts of WAVE file that may be of
 -- interest. In particular, it even allows to write arbitrary chunks between
@@ -104,8 +104,8 @@ import Control.Applicative
 
 data Wave = Wave
   { waveFileFormat   :: !WaveFormat
-    -- ^ This specifies format of file this 'Wave' record was extracted\/to
-    -- be written to, 'WaveFormat'. Default value is: 'WaveVanilla'.
+    -- ^ Format of file this 'Wave' record was extracted\/to be written to,
+    -- 'WaveFormat'. Default value is: 'WaveVanilla'.
   , waveSampleRate   :: !Word32
     -- ^ Sample rate in Hz, default is: 44100.
   , waveSampleFormat :: !SampleFormat
@@ -365,7 +365,7 @@ speaker7_1Surround = E.fromList
 -- throws 'WaveException' if the file is malformed and cannot be read.
 --
 -- You can feed vanilla WAVE and RF64 files. The actual format is detected
--- automatically from contents of the file, not by extension.
+-- automatically from the contents of the file, not by extension.
 --
 -- PCM with samples in form of integers and floats only are supported, see
 -- 'SampleFormat'. Addition of other formats will be performed on request,
@@ -581,7 +581,7 @@ readChunk h maxSize = do
 -- 'waveDataSize' from 'Wave' are ignored, instead the values are inferred
 -- dynamically after using the callback. Further, the function takes care of
 -- the requirement that WAVE data should end on “even byte boundary”. The
--- pad byte is written for you if necessary and included in data size.
+-- pad byte is written for you if necessary and included in the data size.
 --
 -- The 'waveSamplesTotal' field will be inferred for PCM (including formats
 -- with samples represented as floats, i.e. always right now), so the
