@@ -1,3 +1,7 @@
+## Wave 0.1.5
+
+* Improved documentation and metadata.
+
 ## Wave 0.1.4
 
 * The library now doesn't write zero extra format information size when
