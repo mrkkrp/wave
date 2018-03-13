@@ -5,7 +5,6 @@
 [![Stackage Nightly](http://stackage.org/package/wave/badge/nightly)](http://stackage.org/nightly/package/wave)
 [![Stackage LTS](http://stackage.org/package/wave/badge/lts)](http://stackage.org/lts/package/wave)
 [![Build Status](https://travis-ci.org/mrkkrp/wave.svg?branch=master)](https://travis-ci.org/mrkkrp/wave)
-[![Coverage Status](https://coveralls.io/repos/mrkkrp/wave/badge.svg?branch=master&service=github)](https://coveralls.io/github/mrkkrp/wave?branch=master)
 
 This module provides a safe interface that allows to manipulate WAVE files
 in their “classic” form as well as files in
