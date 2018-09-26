@@ -346,9 +346,9 @@ spec = do
 instance Arbitrary Wave where
   arbitrary = do
     waveFileFormat <- elements [minBound..maxBound]
-    waveSampleRate <- arbitrary
+    waveSampleRate <- choose (0, 196000)
     waveSampleFormat <- oneof
-      [ SampleFormatPcmInt . getPositive <$> arbitrary
+      [ SampleFormatPcmInt <$> choose (1, 64)
       , pure SampleFormatIeeeFloat32Bit
       , pure SampleFormatIeeeFloat64Bit ]
     waveChannelMask <- arbitrary `suchThat` (not . E.null)
