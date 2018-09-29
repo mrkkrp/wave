@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE NamedFieldPuns       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Codec.Audio.WaveSpec
@@ -351,7 +352,7 @@ instance Arbitrary Wave where
       [ SampleFormatPcmInt . getPositive <$> arbitrary
       , pure SampleFormatIeeeFloat32Bit
       , pure SampleFormatIeeeFloat64Bit ]
-    waveChannelMask <- arbitrary `suchThat` (not . E.null)
+    waveChannelMask <- arbitrary `suchThat` isSetValidAndNonEmpty
     let waveDataOffset = 0
     waveDataSize <- getSmall <$> arbitrary
     waveSamplesTotal <- arbitrary
@@ -360,6 +361,9 @@ instance Arbitrary Wave where
       body <- B.pack <$> arbitrary
       return (tag, body)
     return Wave {..}
+
+    where
+    isSetValidAndNonEmpty = (&&) <$> (not . E.null) <*> E.valid
 
 instance Arbitrary SpeakerPosition where
   arbitrary = elements [minBound..maxBound]
@@ -393,3 +397,4 @@ totalExtraLength =
 pcmSamplesTotal :: Wave -> Word64
 pcmSamplesTotal wave =
   waveDataSize wave `quot` fromIntegral (waveBlockAlign wave)
+
