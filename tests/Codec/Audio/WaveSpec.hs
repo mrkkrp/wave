@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns         #-}
-{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RecordWildCards      #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -17,10 +16,6 @@ import Test.Hspec
 import Test.QuickCheck
 import qualified Data.ByteString as B
 import qualified Data.Set        as E
-
-#if !MIN_VERSION_base(4,8,0)
-import Control.Applicative
-#endif
 
 -- The test suite has two parts. In the first part we establish that the
 -- library is capable of reading various sample files. In the second part,
