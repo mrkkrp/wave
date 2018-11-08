@@ -1,3 +1,7 @@
+## Wave 0.1.6
+
+* Dropped support for GHC 7.8.
+
 ## Wave 0.1.5
 
 * Improved documentation and metadata.
