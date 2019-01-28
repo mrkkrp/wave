@@ -8,7 +8,6 @@ module Codec.Audio.WaveSpec
 where
 
 import Codec.Audio.Wave
-import Data.Default.Class
 import Data.Word
 import System.IO
 import System.IO.Temp (withSystemTempFile)
@@ -310,6 +309,16 @@ spec = do
           , waveOtherChunks  = waveOtherChunks wave }
 
   describe "pre-defined speaker configurations" $ do
+    let def = Wave
+          { waveFileFormat   = WaveVanilla
+          , waveSampleRate   = 44100
+          , waveSampleFormat = SampleFormatPcmInt 16
+          , waveChannelMask  = E.empty
+          , waveDataOffset   = 0
+          , waveDataSize     = 0
+          , waveSamplesTotal = 0
+          , waveOtherChunks  = []
+          }
     describe "speakerMono" $
       it "has 1 channel" $
         waveChannels def { waveChannelMask = speakerMono } `shouldBe` 1

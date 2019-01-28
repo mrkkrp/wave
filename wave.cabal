@@ -31,7 +31,6 @@ library
                     , bytestring       >= 0.2    && < 0.11
                     , cereal           >= 0.3    && < 0.6
                     , containers       >= 0.5    && < 0.7
-                    , data-default-class
                     , transformers     >= 0.4    && < 0.6
   exposed-modules:    Codec.Audio.Wave
   if flag(dev)
@@ -55,7 +54,6 @@ test-suite tests
                     , base             >= 4.7    && < 5.0
                     , bytestring       >= 0.2    && < 0.11
                     , containers       >= 0.5    && < 0.7
-                    , data-default-class
                     , hspec            >= 2.0    && < 3.0
                     , temporary        >= 1.1    && < 1.4
                     , wave
