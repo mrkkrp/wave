@@ -76,7 +76,6 @@ import Control.Monad.IO.Class
 import Data.Bits
 import Data.ByteString (ByteString)
 import Data.Data (Data)
-import Data.Default.Class
 import Data.Maybe (mapMaybe, isNothing)
 import Data.Monoid ((<>))
 import Data.Set (Set)
@@ -126,16 +125,19 @@ data Wave = Wave
     -- will be padded by null bytes). Default value: @[]@.
   } deriving (Show, Read, Eq, Ord, Typeable, Data)
 
-instance Default Wave where
-  def = Wave
-    { waveFileFormat   = WaveVanilla
-    , waveSampleRate   = 44100
-    , waveSampleFormat = SampleFormatPcmInt 16
-    , waveChannelMask  = defaultSpeakerSet 2
-    , waveDataOffset   = 0
-    , waveDataSize     = 0
-    , waveSamplesTotal = 0
-    , waveOtherChunks  = [] }
+-- | Default value of 'Wave'.
+
+defaultWave :: Wave
+defaultWave = Wave
+  { waveFileFormat   = WaveVanilla
+  , waveSampleRate   = 44100
+  , waveSampleFormat = SampleFormatPcmInt 16
+  , waveChannelMask  = defaultSpeakerSet 2
+  , waveDataOffset   = 0
+  , waveDataSize     = 0
+  , waveSamplesTotal = 0
+  , waveOtherChunks  = []
+  }
 
 -- | 'WaveFormat' as flavor of WAVE file.
 
@@ -215,11 +217,14 @@ data Ds64 = Ds64
   , ds64SamplesTotal :: !Word64 -- ^ Total number of samples (64 bits)
   }
 
-instance Default Ds64 where
-  def = Ds64
-    { ds64RiffSize     = 0
-    , ds64DataSize     = 0
-    , ds64SamplesTotal = 0 }
+-- | Default value of 'Ds64'.
+
+defaultDs64 :: Ds64
+defaultDs64 = Ds64
+  { ds64RiffSize     = 0
+  , ds64DataSize     = 0
+  , ds64SamplesTotal = 0
+  }
 
 -- | A helper type synonym for give up function signatures.
 
@@ -406,7 +411,8 @@ readWaveVanilla
 readWaveVanilla h giveup liftGet = do
   grabWaveTag h giveup
   grabWaveChunks h giveup liftGet Nothing Nothing
-    def { waveFileFormat = WaveVanilla } -- just to be explicit
+    defaultWave { waveFileFormat = WaveVanilla
+                }
 
 -- | Parse an RF64 file.
 
@@ -424,8 +430,9 @@ readWaveRF64 h giveup liftGet = do
     Nothing -> giveup (NonDataChunkIsTooLong "ds64")
     Just body -> liftGet (return $ readDs64 body)
   grabWaveChunks h giveup liftGet (Just ds64DataSize) (Just ds64SamplesTotal)
-    def { waveFileFormat   = WaveRF64
-        , waveSamplesTotal = 0xffffffff }
+    defaultWave { waveFileFormat = WaveRF64
+                , waveSamplesTotal = 0xffffffff
+                }
 
 -- | Read four bytes from given 'Handle' and throw an exception if they are
 -- not “WAVE”.
@@ -650,7 +657,7 @@ writeWaveRF64 h wave writeData = do
   B.hPut h "WAVE"
   -- Write ds64 chunk.
   beforeDs64 <- hTell h
-  writeBsChunk h "ds64" (renderDs64Chunk def)
+  writeBsChunk h "ds64" (renderDs64Chunk defaultDs64)
   -- Write fmt chunk.
   writeBsChunk h "fmt " (renderFmtChunk wave)
   -- Write any extra chunks if present.
