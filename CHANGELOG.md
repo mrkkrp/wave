@@ -1,3 +1,7 @@
+## Unreleased
+
+* Dropped support for GHC 8.0 and older.
+
 ## Wave 0.2.0
 
 * Got rid of `data-default-class` dependency. `Wave` now is not an instance
