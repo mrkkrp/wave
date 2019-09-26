@@ -36,6 +36,7 @@
 -- @fmt@ and @data@ chunks, although it's rarely useful (and may actually
 -- confuse buggy applications that don't know how to skip unknown chunks).
 
+{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE RankNTypes         #-}
@@ -77,7 +78,6 @@ import Data.Bits
 import Data.ByteString (ByteString)
 import Data.Data (Data)
 import Data.Maybe (mapMaybe, isNothing)
-import Data.Monoid ((<>))
 import Data.Set (Set)
 import Data.Typeable
 import Data.Word
@@ -85,6 +85,10 @@ import System.IO
 import qualified Data.ByteString as B
 import qualified Data.Serialize  as S
 import qualified Data.Set        as E
+
+#if !MIN_VERSION_base(4,13,0)
+import Data.Semigroup ((<>))
+#endif
 
 ----------------------------------------------------------------------------
 -- Types
