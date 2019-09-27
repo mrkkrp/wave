@@ -7,9 +7,9 @@
 [![Build Status](https://travis-ci.org/mrkkrp/wave.svg?branch=master)](https://travis-ci.org/mrkkrp/wave)
 
 This module provides a safe interface that allows to manipulate WAVE files
-in their “classic” form as well as files in
-the [RF64 format](https://tech.ebu.ch/docs/tech/tech3306-2009.pdf). RF64
-adds the ability to store files larger than 4 Gb.
+in their “classic” form as well as files in the [RF64
+format](https://tech.ebu.ch/docs/tech/tech3306-2009.pdf). RF64 adds the
+ability to store files larger than 4 Gb.
 
 The main feature of the API is that it does not allow the user to duplicate
 information and introduce errors in that way. For example, block align may
@@ -39,8 +39,8 @@ more detailed documentation, the usage should be trivial.
 
 ## Motivation
 
-I needed a way to work with WAVE files to finish
-my [`flac`](https://github.com/mrkkrp/flac) package and for analyzing input
+I needed a way to work with WAVE files to finish my
+[`flac`](https://github.com/mrkkrp/flac) package and for analyzing input
 data in WAVE format in general. The existing solutions
 ([`WAVE`](https://hackage.haskell.org/package/WAVE),
 [`wavy`](https://hackage.haskell.org/package/wavy)) are not maintained and
@@ -62,7 +62,7 @@ request, please contact me at https://github.com/mrkkrp/wave/issues.
 Issues, bugs, and questions may be reported in [the GitHub issue tracker for
 this project](https://github.com/mrkkrp/wave/issues).
 
-Pull requests are also welcome and will be reviewed quickly.
+Pull requests are also welcome.
 
 ## License
 
