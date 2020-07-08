@@ -288,9 +288,8 @@ spec = do
       waveChannels w `shouldBe` 1
       waveDuration w `shouldBe` 0.813125
 
-  describe "writing/reading of arbitrary WAVE files" . around withSandbox
-    $ it "works"
-    $ \path ->
+  describe "writing/reading of arbitrary WAVE files" . around withSandbox $
+    it "works" $ \path ->
       property $ \wave -> do
         let dataSize = waveDataSize wave
             dataSize' =
@@ -320,30 +319,30 @@ spec = do
               waveSamplesTotal = 0,
               waveOtherChunks = []
             }
-    describe "speakerMono"
-      $ it "has 1 channel"
-      $ waveChannels def {waveChannelMask = speakerMono} `shouldBe` 1
-    describe "speakerStereo"
-      $ it "has 2 channels"
-      $ waveChannels def {waveChannelMask = speakerStereo} `shouldBe` 2
-    describe "speakerQuad"
-      $ it "has 4 channels"
-      $ waveChannels def {waveChannelMask = speakerQuad} `shouldBe` 4
-    describe "speakerSurround"
-      $ it "has 4 channels"
-      $ waveChannels def {waveChannelMask = speakerSurround} `shouldBe` 4
-    describe "speaker5_1"
-      $ it "has 6 channels"
-      $ waveChannels def {waveChannelMask = speaker5_1} `shouldBe` 6
-    describe "speaker7_1"
-      $ it "has 8 channels"
-      $ waveChannels def {waveChannelMask = speaker7_1} `shouldBe` 8
-    describe "speaker5_1Surround"
-      $ it "has 6 channels"
-      $ waveChannels def {waveChannelMask = speaker5_1Surround} `shouldBe` 6
-    describe "speaker7_1"
-      $ it "has 8 channels"
-      $ waveChannels def {waveChannelMask = speaker7_1Surround} `shouldBe` 8
+    describe "speakerMono" $
+      it "has 1 channel" $
+        waveChannels def {waveChannelMask = speakerMono} `shouldBe` 1
+    describe "speakerStereo" $
+      it "has 2 channels" $
+        waveChannels def {waveChannelMask = speakerStereo} `shouldBe` 2
+    describe "speakerQuad" $
+      it "has 4 channels" $
+        waveChannels def {waveChannelMask = speakerQuad} `shouldBe` 4
+    describe "speakerSurround" $
+      it "has 4 channels" $
+        waveChannels def {waveChannelMask = speakerSurround} `shouldBe` 4
+    describe "speaker5_1" $
+      it "has 6 channels" $
+        waveChannels def {waveChannelMask = speaker5_1} `shouldBe` 6
+    describe "speaker7_1" $
+      it "has 8 channels" $
+        waveChannels def {waveChannelMask = speaker7_1} `shouldBe` 8
+    describe "speaker5_1Surround" $
+      it "has 6 channels" $
+        waveChannels def {waveChannelMask = speaker5_1Surround} `shouldBe` 6
+    describe "speaker7_1" $
+      it "has 8 channels" $
+        waveChannels def {waveChannelMask = speaker7_1Surround} `shouldBe` 8
 
 ----------------------------------------------------------------------------
 -- Instances
