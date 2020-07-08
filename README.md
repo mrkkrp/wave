@@ -4,7 +4,7 @@
 [![Hackage](https://img.shields.io/hackage/v/wave.svg?style=flat)](https://hackage.haskell.org/package/wave)
 [![Stackage Nightly](http://stackage.org/package/wave/badge/nightly)](http://stackage.org/nightly/package/wave)
 [![Stackage LTS](http://stackage.org/package/wave/badge/lts)](http://stackage.org/lts/package/wave)
-[![Build Status](https://travis-ci.org/mrkkrp/wave.svg?branch=master)](https://travis-ci.org/mrkkrp/wave)
+![CI](https://github.com/mrkkrp/wave/workflows/CI/badge.svg?branch=master)
 
 This module provides a safe interface that allows to manipulate WAVE files
 in their “classic” form as well as files in the [RF64
