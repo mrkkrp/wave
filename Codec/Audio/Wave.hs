@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -89,10 +88,6 @@ import qualified Data.Set as E
 import Data.Typeable
 import Data.Word
 import System.IO
-
-#if !MIN_VERSION_base(4,13,0)
-import Data.Semigroup ((<>))
-#endif
 
 ----------------------------------------------------------------------------
 -- Types
