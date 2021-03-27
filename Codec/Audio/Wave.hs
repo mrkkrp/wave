@@ -12,34 +12,26 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- This module provides a safe interface that allows to manipulate WAVE
+-- This module provides a safe interface that allows us to manipulate WAVE
 -- files in their “classic” form as well as files in the RF64 format
 -- <https://tech.ebu.ch/docs/tech/tech3306-2009.pdf>. RF64 adds the ability
 -- to store files larger than 4 Gb.
 --
 -- The main feature of the API is that it does not allow the user to
--- duplicate information and introduce errors in that way. For example,
--- block align may be calculated from other parameters of audio stream, thus
--- we do not store it in the 'Wave' record and do not allow user to specify
--- it. We provide, however, a way to calculate it given 'Wave' record, see
--- 'waveBlockAlign'. The same is done for channels. Channel mask is a more
--- general means of providing information about number of channels and
--- corresponding speaker positions, thus we only store channel mask in
--- user-friendly form, and number of channels can be derived from that
--- information.
+-- duplicate information and introduce errors in that way. For example, the
+-- block alignment can be calculated from other parameters of an audio
+-- stream, thus we do not store it in the 'Wave' record and do not allow
+-- user to specify it. We provide, however, a way to calculate it given a
+-- 'Wave' record, see 'waveBlockAlign'. The same is true for the number of
+-- channels. The channel mask is a more general means of providing the
+-- information about the number of channels and the corresponding speaker
+-- positions, thus we only store the channel mask.
 --
--- Another feature of the library is that it does not dictate how to
--- read\/write audio data. What we give is the information about audio data
--- and offset in file where it begins. To write data the user may use a
--- callback that receives a 'Handle' as an argument. Size of data block is
--- deduced automatically for you. Exclusion of audio data from consideration
--- makes the library pretty fast and open to different ways to handle audio
--- data itself, including using foreign code (such as C).
---
--- The library provides control over all parts of WAVE file that may be of
--- interest. In particular, it even allows to write arbitrary chunks between
--- @fmt@ and @data@ chunks, although it's rarely useful (and may actually
--- confuse buggy applications that don't know how to skip unknown chunks).
+-- Another feature of the library is that it does not dictate how to read or
+-- write the audio data. To write the audio data the user passes a callback
+-- that receives a 'Handle' as an argument. The size of the written data
+-- block is deduced automatically. This makes the library fast and open to
+-- different ways of handling the audio data, including via foreign code.
 module Codec.Audio.Wave
   ( -- * Types
     Wave (..),
@@ -92,15 +84,14 @@ import System.IO
 ----------------------------------------------------------------------------
 -- Types
 
--- | Representation of “essential” information about a WAVE file. Every
--- field in this record provides orthogonal piece of information, so no
--- field can be calculated from other fields. The fields are complemented by
--- the following functions that calculate some derivative parameters:
--- 'waveByteRate', 'waveBitRate', 'waveBitsPerSample', 'waveBlockAlign', and
--- 'waveChannels'.
+-- | Representation of the “essential” information about a WAVE file. Every
+-- field in this record is an orthogonal piece of information, so no field
+-- can be calculated from other fields. The fields are complemented by the
+-- functions that calculate derivative parameters: 'waveByteRate',
+-- 'waveBitRate', 'waveBitsPerSample', 'waveBlockAlign', and 'waveChannels'.
 data Wave = Wave
-  { -- | Format of file this 'Wave' record was extracted\/to be written to,
-    -- 'WaveFormat'. Default value is: 'WaveVanilla'.
+  { -- | The format of the file this 'Wave' record was extracted\/to be
+    -- written to, 'WaveFormat'. Default value is: 'WaveVanilla'.
     waveFileFormat :: !WaveFormat,
     -- | Sample rate in Hz, default is: 44100.
     waveSampleRate :: !Word32,
@@ -110,25 +101,25 @@ data Wave = Wave
     -- | The channel mask as a 'Set' of 'SpeakerPosition's. Default value is
     -- 'speakerStereo'.
     waveChannelMask :: !(Set SpeakerPosition),
-    -- | Offset in bytes from the beginning of file where actual sample data
-    -- begins. Default value: 0.
+    -- | The offset in bytes where the actual sample data begins. Default
+    -- value: 0.
     waveDataOffset :: !Word32,
-    -- | Size of audio data in bytes. Default value: 0.
+    -- | Size of the audio data in bytes. Default value: 0.
     waveDataSize :: !Word64,
-    -- | Total number of samples in the audio stream. “Samples” here mean
-    -- multi-channel samples, so one second of 44.1 kHz audio will have
+    -- | The total number of samples in the audio stream. “Samples” here
+    -- mean multi-channel samples, so one second of 44.1 kHz audio will have
     -- 44100 samples regardless of the number of channels. For PCM format
-    -- it's deduced from size of data-block, for other formats it's read
-    -- from\/written to the “fact” chunk. Default value: 0.
+    -- it's deduced from the size of the data block, for other formats it's
+    -- read from\/written to the “fact” chunk. Default value: 0.
     waveSamplesTotal :: !Word64,
-    -- | Other chunks as @(tag, body)@ pairs. Only first four bytes of @tag@
-    -- are significant (and it must be four bytes long, if it's too short it
-    -- will be padded by null bytes). Default value: @[]@.
+    -- | Other chunks as @(tag, body)@ pairs. Only the first four bytes of
+    -- @tag@ are significant and it must be four bytes long, if it's too
+    -- short it will be padded by null bytes. Default value: @[]@.
     waveOtherChunks :: [(ByteString, ByteString)]
   }
   deriving (Show, Read, Eq, Ord, Typeable, Data)
 
--- | Default value of 'Wave'.
+-- | The default value of 'Wave'.
 defaultWave :: Wave
 defaultWave =
   Wave
@@ -142,7 +133,7 @@ defaultWave =
       waveOtherChunks = []
     }
 
--- | 'WaveFormat' as flavor of WAVE file.
+-- | 'WaveFormat' as a flavor of WAVE file.
 data WaveFormat
   = -- | Classic WAVE file, 4 Gb size limitation
     WaveVanilla
@@ -150,7 +141,7 @@ data WaveFormat
     WaveRF64
   deriving (Show, Read, Eq, Ord, Bounded, Enum, Typeable, Data)
 
--- | Sample formats with associated bit depth (when variable).
+-- | Sample formats with associated bit depth.
 data SampleFormat
   = -- | Unsigned\/signed integers, the argument is the number of bits per
     -- sample (8 bit and less are encoded as unsigned integers).
@@ -204,15 +195,15 @@ data SpeakerPosition
 
 -- | Exceptions the library can throw.
 data WaveException
-  = -- | Format of given file doesn't look like anything familiar. The first
-    -- argument is a message explaining what's wrong and the second argument
-    -- is the file name.
+  = -- | Format of the given file doesn't look like anything familiar. The
+    -- first argument is a message explaining what's wrong and the second
+    -- argument is the file name.
     BadFileFormat String FilePath
   | -- | The library found a chunk which is not a @data@ chunk but is way
     -- too long. The first argument is the tag of the chunk and the second
     -- argument is the file name.
     NonDataChunkIsTooLong ByteString FilePath
-  | -- | The specified format is non-PCM, it's vanilla WAVE, but “fact”
+  | -- | The specified format is non-PCM, it's vanilla WAVE, but the “fact”
     -- chunk is missing.
     NonPcmFormatButMissingFact FilePath
   deriving (Show, Read, Eq, Typeable, Data)
@@ -240,7 +231,7 @@ data Ds64 = Ds64
     ds64SamplesTotal :: !Word64
   }
 
--- | Default value of 'Ds64'.
+-- | The default value of 'Ds64'.
 defaultDs64 :: Ds64
 defaultDs64 =
   Ds64
@@ -258,17 +249,17 @@ type LiftGet = forall a. IO (Either String a) -> IO a
 ----------------------------------------------------------------------------
 -- Derived information
 
--- | Byte rate of a given 'Wave' file. Byte rate is the number of bytes it
--- takes to encode one second of audio.
+-- | The byte rate of a given 'Wave' file. The byte rate is the number of
+-- bytes it takes to encode one second of audio.
 waveByteRate :: Wave -> Word32
 waveByteRate wave =
   waveSampleRate wave * fromIntegral (waveBlockAlign wave)
 
--- | Bit rate in kilobits per second.
+-- | The bit rate in kilobits per second.
 waveBitRate :: Wave -> Double
 waveBitRate = (/ 125) . fromIntegral . waveByteRate
 
--- | Number of significant bits in every sample.
+-- | The number of significant bits in a sample.
 waveBitsPerSample :: Wave -> Word16
 waveBitsPerSample Wave {..} =
   case waveSampleFormat of
@@ -276,20 +267,20 @@ waveBitsPerSample Wave {..} =
     SampleFormatIeeeFloat32Bit -> 32
     SampleFormatIeeeFloat64Bit -> 64
 
--- | Block alignment of samples as number of bits per sample (rounded
--- towards next multiplier of 8 if necessary) multiplied by number of
--- channels. This is how many bytes it takes to encode a single
+-- | The block alignment of samples as the number of bits per sample
+-- (rounded towards the next multiplier of 8 if necessary) multiplied by the
+-- number of channels. This is how many bytes it takes to encode a single
 -- multi-channel sample.
 waveBlockAlign :: Wave -> Word16
 waveBlockAlign wave = waveChannels wave * bytesPerSample
   where
     bytesPerSample = roundBitsPerSample (waveBitsPerSample wave) `quot` 8
 
--- | Total number of channels present in the audio stream.
+-- | The total number of channels present in the audio stream.
 waveChannels :: Wave -> Word16
 waveChannels Wave {..} = fromIntegral (E.size waveChannelMask)
 
--- | Duration in seconds.
+-- | The duration in seconds.
 waveDuration :: Wave -> Double
 waveDuration wave =
   fromIntegral (waveSamplesTotal wave) / fromIntegral (waveSampleRate wave)
@@ -380,19 +371,17 @@ speaker7_1Surround =
 ----------------------------------------------------------------------------
 -- Reading
 
--- | Read 'Wave' record from a WAVE file found at given path. This action
+-- | Read a 'Wave' record from a WAVE file found at given path. This action
 -- throws 'WaveException' if the file is malformed and cannot be read.
 --
--- You can feed vanilla WAVE and RF64 files. The actual format is detected
+-- Vanilla WAVE and RF64 files are supported. The format is detected
 -- automatically from the contents of the file, not by extension.
 --
--- PCM with samples in form of integers and floats only are supported, see
--- 'SampleFormat'. Addition of other formats will be performed on request,
--- please feel free to contact me at
--- <https://github.com/mrkkrp/wave/issues>.
+-- Only PCM with samples in the form of integers or floats are supported,
+-- see 'SampleFormat'.
 --
--- Finally, if “fmt” chunk is not extensible, we try to guess channel mask
--- from number of channels alone, here is how:
+-- Finally, if “fmt” chunk is not extensible, we try to guess the channel
+-- mask from the number of channels alone, here is how:
 --
 --     * 1 channel: front center (C)
 --     * 2 channels: front left (L), front right (R)
@@ -472,8 +461,8 @@ readWaveRF64 h giveup liftGet = do
         waveSamplesTotal = 0xffffffff
       }
 
--- | Read four bytes from given 'Handle' and throw an exception if they are
--- not “WAVE”.
+-- | Read four bytes from the given 'Handle' and throw an exception if they
+-- are not “WAVE”.
 grabWaveTag :: Handle -> GiveUp -> IO ()
 grabWaveTag h giveup = do
   waveId <- B.hGet h 4
@@ -608,7 +597,7 @@ readWaveFmt wave = S.runGet $ do
 readFact :: ByteString -> Either String Word32
 readFact = S.runGet S.getWord32le
 
--- | Read a classic RIFF 'Chunk' (32 bit tag + 32 bit size).
+-- | Read a RIFF 'Chunk' (32 bit tag + 32 bit size).
 readChunk ::
   -- | Opened 'Handle' to read the chunk from
   Handle ->
@@ -640,14 +629,13 @@ readChunk h maxSize = do
 -- provided callback to write WAVE audio data. 'waveDataOffset' and
 -- 'waveDataSize' from 'Wave' are ignored, instead the values are inferred
 -- dynamically after using the callback. Further, the function takes care of
--- the requirement that WAVE data should end on “even byte boundary”. The
--- pad byte is written for you if necessary and included in the data size.
+-- the requirement that WAVE data should end on an “even byte boundary”. The
+-- pad byte is written if necessary and included in the data size.
 --
--- The 'waveSamplesTotal' field will be inferred for PCM (including formats
--- with samples represented as floats, i.e. always right now), so the
--- provided value is not used.
+-- The 'waveSamplesTotal' field will be inferred, so the provided value is
+-- not used.
 --
--- If 'Wave' specifies floating point sample format, the “fact” chunk is
+-- If 'Wave' specifies the floating point sample format, the “fact” chunk is
 -- automatically generated and written (the chunk is required for all
 -- non-PCM formats by the spec), but only for vanilla WAVE.
 writeWaveFile ::
@@ -766,7 +754,7 @@ renderDs64Chunk Ds64 {..} = S.runPut $ do
   S.putWord64le ds64DataSize
   S.putWord64le ds64SamplesTotal
 
--- | Render format chunk as a strict 'ByteString' from a given 'Wave'.
+-- | Render the format chunk as a strict 'ByteString' from a given 'Wave'.
 renderFmtChunk :: Wave -> ByteString
 renderFmtChunk wave@Wave {..} = S.runPut $ do
   let extensible = isExtensibleFmt wave
@@ -790,12 +778,13 @@ renderFmtChunk wave@Wave {..} = S.runPut $ do
       SampleFormatIeeeFloat32Bit -> ksdataformatSubtypeIeeeFloat
       SampleFormatIeeeFloat64Bit -> ksdataformatSubtypeIeeeFloat
 
--- | Render fact chunk as a strict 'ByteString'.
+-- | Render the fact chunk as a strict 'ByteString'.
 renderFactChunk :: Word32 -> ByteString
 renderFactChunk = S.runPut . S.putWord32le
 
 -- | Write a RIFF 'Chunk'. It's the responsibility of the programmer to
--- ensure that specified size matches size of body that is actually written.
+-- ensure that the specified size matches the size of the body that is
+-- actually written.
 writeChunk ::
   -- | Opened 'Handle' where to write the 'Chunk'
   Handle ->
@@ -878,7 +867,7 @@ fromSpeakerMask channelMask = E.fromList $ mapMaybe f [minBound .. maxBound]
         then Just sp
         else Nothing
 
--- | Get default speaker set for given number of channels.
+-- | Get the default speaker set for a given number of channels.
 defaultSpeakerSet :: Word16 -> Set SpeakerPosition
 defaultSpeakerSet n = case n of
   0 -> E.empty
@@ -892,26 +881,26 @@ defaultSpeakerSet n = case n of
   8 -> speaker7_1Surround
   x -> E.fromList $ take (fromIntegral x) [minBound .. maxBound]
 
--- | Does this 'Wave' record requires extensible format chunk to be used?
+-- | Does this 'Wave' record require an extensible format chunk to be used?
 isExtensibleFmt :: Wave -> Bool
 isExtensibleFmt wave@Wave {..} =
   waveChannels wave > 2
     || waveChannelMask /= defaultSpeakerSet (waveChannels wave)
     || (waveBitsPerSample wave `rem` 8) /= 0
 
--- | Determine if given 'SampleFormat' is not PCM.
+-- | Determine if the given 'SampleFormat' is not PCM.
 isNonPcm :: SampleFormat -> Bool
 isNonPcm (SampleFormatPcmInt _) = False
 isNonPcm SampleFormatIeeeFloat32Bit = True
 isNonPcm SampleFormatIeeeFloat64Bit = True
 
--- | Round bits per sample to next multiplier of 8, if necessary.
+-- | Round bits per sample to the next multiplier of 8, if necessary.
 roundBitsPerSample :: Word16 -> Word16
 roundBitsPerSample n = if r /= 0 then (x + 1) * 8 else n
   where
     (x, r) = n `quotRem` 8
 
--- | Estimate total number of samples for a PCM audio stream.
+-- | Estimate the total number of samples for a PCM audio stream.
 pcmSamplesTotal :: Wave -> Word64
 pcmSamplesTotal wave =
   waveDataSize wave `quot` fromIntegral (waveBlockAlign wave)

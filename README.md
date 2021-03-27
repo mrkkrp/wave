@@ -6,56 +6,42 @@
 [![Stackage LTS](http://stackage.org/package/wave/badge/lts)](http://stackage.org/lts/package/wave)
 ![CI](https://github.com/mrkkrp/wave/workflows/CI/badge.svg?branch=master)
 
-This module provides a safe interface that allows to manipulate WAVE files
-in their “classic” form as well as files in the [RF64
+This library provides a safe interface that allows us to manipulate WAVE
+files in their “classic” form as well as files in the [RF64
 format](https://tech.ebu.ch/docs/tech/tech3306-2009.pdf). RF64 adds the
 ability to store files larger than 4 Gb.
 
 The main feature of the API is that it does not allow the user to duplicate
-information and introduce errors in that way. For example, block align may
-be calculated from other parameters of audio stream, thus we do not store it
-in the `Wave` record and do not allow user to specify it. We provide,
-however, a way to calculate it given `Wave` record, see `waveBlockAlign`.
-The same is done for channels. Channel mask is a more general means of
-providing information about number of channels and corresponding speaker
-positions, thus we only store channel mask in user-friendly form, and number
-of channels can be derived from that information.
+information and introduce errors in that way. For example, the block
+alignment can be calculated from other parameters of an audio stream, thus
+we do not store it in the `Wave` record and do not allow the user to specify
+it. We provide, however, a way to calculate it given a `Wave` record, see
+`waveBlockAlign`. The same is true for the number of channels. The channel
+mask is a more general means of providing the information about the number
+of channels and the corresponding speaker positions, thus we only store the
+channel mask.
 
-Another feature of the library is that it does not dictate how to read/write
-audio data. What we give is the information about audio data and offset in
-file where it begins. To write data the user may use a callback that
-receives a `Handle` as an argument. Size of data block is deduced
-automatically for you. Exclusion of audio data from consideration makes the
-library pretty fast and open to different ways to handle audio data itself,
-including using foreign code (such as C).
-
-The library provides control over all parts of WAVE file that may be of
-interest. In particular, it even allows to write arbitrary chunks between
-`fmt` and `data` chunks, although it's rarely useful (and may actually
-confuse buggy applications that don't know how to skip unknown chunks).
-
-Please [read the Haddocks](https://hackage.haskell.org/package/wave) for a
-more detailed documentation, the usage should be trivial.
+Another feature of the library is that it does not dictate how to read or
+write the audio data. To write the audio data the user passes a callback
+that receives a `Handle` as an argument. The size of the written data block
+is deduced automatically. This makes the library fast and open to different
+ways of handling the audio data, including via foreign code.
 
 ## Motivation
 
-I needed a way to work with WAVE files to finish my
+I needed a way to work with WAVE files to finish the
 [`flac`](https://github.com/mrkkrp/flac) package and for analyzing input
 data in WAVE format in general. The existing solutions
 ([`WAVE`](https://hackage.haskell.org/package/WAVE),
 [`wavy`](https://hackage.haskell.org/package/wavy)) are not maintained and
-poorly designed. It suffices to say that they read samples of audio stream
-and put them into a *linked list*, like `[[Sample]]` (the inner linked list
-is to store multi-channel data, yeah).
-
-This `wave` package is the first serious solution in Haskell that allows to
-work with WAVE data safely and efficiently.
+poorly designed. Suffice it to say that they read samples of audio stream
+and put them in a *linked list*, like `[[Sample]]` (the inner linked list is
+to store multi-channel data).
 
 ## Limitations
 
 The library only supports PCM format with samples represented as integers
-and floating point values. Support for other formats will be added on
-request, please contact me at https://github.com/mrkkrp/wave/issues.
+and floating point values.
 
 ## Contribution
 

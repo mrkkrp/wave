@@ -16,13 +16,13 @@ import Test.QuickCheck
 
 -- The test suite has two parts. In the first part we establish that the
 -- library is capable of reading various sample files. In the second part,
--- we generate random WAVE files and write them to temporary files, then
--- read the files back and compare. This way we ensure that 1) the library
--- supports reading arbitrary valid files 2) since reading is valid, we can
--- assume that writing is valid too if the read results look OK.
+-- we generate random WAVE files and write them, then read the files back
+-- and compare. This way we ensure that 1) the library supports reading
+-- arbitrary valid files 2) since reading is valid, we can assume that
+-- writing is valid too if the read results look OK.
 --
 -- Should any problems be discovered in the future, it's simple to extend
--- the first part of the test suite to check for those cases.
+-- the first part of the test suite.
 
 spec :: Spec
 spec = do
@@ -373,7 +373,7 @@ instance Arbitrary SpeakerPosition where
 ----------------------------------------------------------------------------
 -- Helpers
 
--- | Make a temporary copy of @audio-samples/sample.flac@ file and provide
+-- | Make a temporary copy of @audio-samples/sample.wav@ file and provide
 -- the path to the file. Automatically remove the file when the test
 -- finishes.
 withSandbox :: ActionWith FilePath -> IO ()
