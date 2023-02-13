@@ -393,7 +393,7 @@ speaker7_1Surround =
 --     * 8 channels: L, R, C, LFE, Lb, Rb, Ls, Rs
 --     * N channels: first N items are taken from @[minBound..maxBound]@ of 'SpeakerPosition's
 readWaveFile ::
-  MonadIO m =>
+  (MonadIO m) =>
   -- | Location of file to read
   FilePath ->
   m Wave
@@ -639,7 +639,7 @@ readChunk h maxSize = do
 -- automatically generated and written (the chunk is required for all
 -- non-PCM formats by the spec), but only for vanilla WAVE.
 writeWaveFile ::
-  MonadIO m =>
+  (MonadIO m) =>
   -- | Where to save the file
   FilePath ->
   -- | Parameters of the WAVE file
