@@ -6,8 +6,8 @@
 module Codec.Audio.WaveSpec (spec) where
 
 import Codec.Audio.Wave
-import qualified Data.ByteString as B
-import qualified Data.Set as E
+import Data.ByteString qualified as B
+import Data.Set qualified as E
 import Data.Word
 import System.IO
 import System.IO.Temp (withSystemTempFile)

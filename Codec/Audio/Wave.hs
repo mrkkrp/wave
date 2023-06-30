@@ -71,12 +71,12 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Data.Bits
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
+import Data.ByteString qualified as B
 import Data.Data (Data)
 import Data.Maybe (isNothing, mapMaybe)
-import qualified Data.Serialize as S
+import Data.Serialize qualified as S
 import Data.Set (Set)
-import qualified Data.Set as E
+import Data.Set qualified as E
 import Data.Typeable
 import Data.Word
 import System.IO
