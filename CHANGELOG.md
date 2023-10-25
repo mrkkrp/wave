@@ -1,6 +1,6 @@
-## Unreleased
+## Wave 0.2.1
 
-* Dropped support for GHC 8.2 and older.
+* Maintenance release with more modern and minimal dependencies.
 
 ## Wave 0.2.0
 
