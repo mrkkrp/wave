@@ -5,7 +5,7 @@ license:         BSD-3-Clause
 license-file:    LICENSE.md
 maintainer:      Mark Karpov <markkarpov92@gmail.com>
 author:          Mark Karpov <markkarpov92@gmail.com>
-tested-with:     ghc ==9.4.7 ghc ==9.6.3 ghc ==9.8.1
+tested-with:     ghc ==9.6.3 ghc ==9.8.2 ghc ==9.10.1
 homepage:        https://github.com/mrkkrp/wave
 bug-reports:     https://github.com/mrkkrp/wave/issues
 synopsis:        Work with WAVE and RF64 files
@@ -36,7 +36,7 @@ library
         base >=4.15 && <5,
         bytestring >=0.2 && <0.13,
         cereal >=0.3 && <0.6,
-        containers >=0.5 && <0.7
+        containers >=0.5 && <0.8
 
     if flag(dev)
         ghc-options:
@@ -57,7 +57,7 @@ test-suite tests
         QuickCheck >=2.8.2 && <3,
         base >=4.15 && <5,
         bytestring >=0.2 && <0.12,
-        containers >=0.5 && <0.7,
+        containers >=0.5 && <0.8,
         hspec >=2 && <3,
         temporary >=1.1 && <1.4,
         wave
