@@ -4,7 +4,7 @@
 [![Hackage](https://img.shields.io/hackage/v/wave.svg?style=flat)](https://hackage.haskell.org/package/wave)
 [![Stackage Nightly](http://stackage.org/package/wave/badge/nightly)](http://stackage.org/nightly/package/wave)
 [![Stackage LTS](http://stackage.org/package/wave/badge/lts)](http://stackage.org/lts/package/wave)
-![CI](https://github.com/mrkkrp/wave/workflows/CI/badge.svg?branch=master)
+[![CI](https://github.com/mrkkrp/wave/actions/workflows/ci.yaml/badge.svg)](https://github.com/mrkkrp/wave/actions/workflows/ci.yaml)
 
 This library provides a safe interface that allows us to manipulate WAVE
 files in their “classic” form as well as files in the [RF64
