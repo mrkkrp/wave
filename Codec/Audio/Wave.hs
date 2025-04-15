@@ -77,7 +77,6 @@ import Data.Maybe (isNothing, mapMaybe)
 import Data.Serialize qualified as S
 import Data.Set (Set)
 import Data.Set qualified as E
-import Data.Typeable
 import Data.Word
 import System.IO
 
@@ -117,7 +116,7 @@ data Wave = Wave
     -- short it will be padded by null bytes. Default value: @[]@.
     waveOtherChunks :: [(ByteString, ByteString)]
   }
-  deriving (Show, Read, Eq, Ord, Typeable, Data)
+  deriving (Show, Read, Eq, Ord, Data)
 
 -- | The default value of 'Wave'.
 defaultWave :: Wave
@@ -139,7 +138,7 @@ data WaveFormat
     WaveVanilla
   | -- | WAVE file with RF64 extension
     WaveRF64
-  deriving (Show, Read, Eq, Ord, Bounded, Enum, Typeable, Data)
+  deriving (Show, Read, Eq, Ord, Bounded, Enum, Data)
 
 -- | Sample formats with associated bit depth.
 data SampleFormat
@@ -150,7 +149,7 @@ data SampleFormat
     SampleFormatIeeeFloat32Bit
   | -- | Samples are 64 bit floating point numbers.
     SampleFormatIeeeFloat64Bit
-  deriving (Show, Read, Eq, Ord, Typeable, Data)
+  deriving (Show, Read, Eq, Ord, Data)
 
 -- | Speaker positions clarifying which exactly channels are packed in the
 -- WAVE file.
@@ -191,7 +190,7 @@ data SpeakerPosition
     SpeakerTopBackCenter
   | -- | Top back right
     SpeakerTopBackRight
-  deriving (Show, Read, Eq, Ord, Bounded, Enum, Typeable, Data)
+  deriving (Show, Read, Eq, Ord, Bounded, Enum, Data)
 
 -- | Exceptions the library can throw.
 data WaveException
@@ -206,7 +205,7 @@ data WaveException
   | -- | The specified format is non-PCM, it's vanilla WAVE, but the “fact”
     -- chunk is missing.
     NonPcmFormatButMissingFact FilePath
-  deriving (Show, Read, Eq, Typeable, Data)
+  deriving (Show, Read, Eq, Data)
 
 instance Exception WaveException
 
