@@ -15,12 +15,12 @@
 -- This module provides a safe interface that allows us to manipulate WAVE
 -- files in their “classic” form as well as files in the RF64 format
 -- <https://tech.ebu.ch/docs/tech/tech3306-2009.pdf>. RF64 adds the ability
--- to store files larger than 4 Gb.
+-- to store files larger than 4 GB.
 --
 -- The main feature of the API is that it does not allow the user to
 -- duplicate information and introduce errors in that way. For example, the
 -- block alignment can be calculated from other parameters of an audio
--- stream, thus we do not store it in the 'Wave' record and do not allow
+-- stream, thus we do not store it in the 'Wave' record and do not allow the
 -- user to specify it. We provide, however, a way to calculate it given a
 -- 'Wave' record, see 'waveBlockAlign'. The same is true for the number of
 -- channels. The channel mask is a more general means of providing the
@@ -112,8 +112,8 @@ data Wave = Wave
     -- read from\/written to the “fact” chunk. Default value: 0.
     waveSamplesTotal :: !Word64,
     -- | Other chunks as @(tag, body)@ pairs. Only the first four bytes of
-    -- @tag@ are significant and it must be four bytes long, if it's too
-    -- short it will be padded by null bytes. Default value: @[]@.
+    -- @tag@ are significant and it must be four bytes long; if it's too
+    -- short, it will be padded with null bytes. Default value: @[]@.
     waveOtherChunks :: [(ByteString, ByteString)]
   }
   deriving (Show, Read, Eq, Ord, Data)
@@ -132,9 +132,9 @@ defaultWave =
       waveOtherChunks = []
     }
 
--- | 'WaveFormat' as a flavor of WAVE file.
+-- | 'WaveFormat' as a flavor of a WAVE file.
 data WaveFormat
-  = -- | Classic WAVE file, 4 Gb size limitation
+  = -- | Classic WAVE file, 4 GB size limitation
     WaveVanilla
   | -- | WAVE file with RF64 extension
     WaveRF64
@@ -151,8 +151,8 @@ data SampleFormat
     SampleFormatIeeeFloat64Bit
   deriving (Show, Read, Eq, Ord, Data)
 
--- | Speaker positions clarifying which exactly channels are packed in the
--- WAVE file.
+-- | Speaker positions clarifying which channels are packed in the WAVE
+-- file.
 data SpeakerPosition
   = -- | Front left
     SpeakerFrontLeft
@@ -202,7 +202,7 @@ data WaveException
     -- too long. The first argument is the tag of the chunk and the second
     -- argument is the file name.
     NonDataChunkIsTooLong ByteString FilePath
-  | -- | The specified format is non-PCM, it's vanilla WAVE, but the “fact”
+  | -- | The specified format is non-PCM; it's vanilla WAVE, but the “fact”
     -- chunk is missing.
     NonPcmFormatButMissingFact FilePath
   deriving (Show, Read, Eq, Data)
@@ -239,10 +239,10 @@ defaultDs64 =
       ds64SamplesTotal = 0
     }
 
--- | A helper type synonym for give up function signatures.
+-- | A helper type synonym for give-up function signatures.
 type GiveUp = forall a. (FilePath -> WaveException) -> IO a
 
--- | A helpers type synonym for the function to lift parsers.
+-- | A helper type synonym for the function to lift parsers.
 type LiftGet = forall a. IO (Either String a) -> IO a
 
 ----------------------------------------------------------------------------
@@ -370,16 +370,16 @@ speaker7_1Surround =
 ----------------------------------------------------------------------------
 -- Reading
 
--- | Read a 'Wave' record from a WAVE file found at given path. This action
--- throws 'WaveException' if the file is malformed and cannot be read.
+-- | Read a 'Wave' record from a WAVE file found at the given path. This
+-- action throws 'WaveException' if the file is malformed and cannot be read.
 --
 -- Vanilla WAVE and RF64 files are supported. The format is detected
 -- automatically from the contents of the file, not by extension.
 --
--- Only PCM with samples in the form of integers or floats are supported,
--- see 'SampleFormat'.
+-- Only PCM with samples in the form of integers or floats is supported, see
+-- 'SampleFormat'.
 --
--- Finally, if “fmt” chunk is not extensible, we try to guess the channel
+-- Finally, if the “fmt” chunk is not extensible, we try to guess the channel
 -- mask from the number of channels alone, here is how:
 --
 --     * 1 channel: front center (C)
@@ -746,7 +746,7 @@ writeBsChunk h chunkTag body =
       chunkBody = Right body
    in writeChunk h Chunk {..}
 
--- | Render a “ds64” chunk as a stirct 'ByteString'.
+-- | Render a “ds64” chunk as a strict 'ByteString'.
 renderDs64Chunk :: Ds64 -> ByteString
 renderDs64Chunk Ds64 {..} = S.runPut $ do
   S.putWord64le ds64RiffSize

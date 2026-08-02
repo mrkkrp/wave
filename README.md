@@ -9,7 +9,7 @@
 This library provides a safe interface that allows us to manipulate WAVE
 files in their “classic” form as well as files in the [RF64
 format](https://tech.ebu.ch/docs/tech/tech3306-2009.pdf). RF64 adds the
-ability to store files larger than 4 Gb.
+ability to store files larger than 4 GB.
 
 The main feature of the API is that it does not allow the user to duplicate
 information and introduce errors in that way. For example, the block
@@ -34,8 +34,9 @@ I needed a way to work with WAVE files to finish the
 data in WAVE format in general. The existing solutions
 ([`WAVE`](https://hackage.haskell.org/package/WAVE),
 [`wavy`](https://hackage.haskell.org/package/wavy)) are not maintained and
-poorly designed. Suffice it to say that they read samples of audio stream
-and put them in a *linked list*, like `[[Sample]]` (the inner linked list is
+poorly designed. Suffice it to say that they read samples of the audio
+stream and put them in a *linked list*, like `[[Sample]]` (the inner linked
+list is
 to store multi-channel data).
 
 ## Limitations
@@ -54,4 +55,4 @@ Pull requests are also welcome.
 
 Copyright © 2016–present Mark Karpov
 
-Distributed under BSD 3 clause license.
+Distributed under the BSD 3-clause license.
