@@ -260,7 +260,7 @@ waveBitRate = (/ 125) . fromIntegral . waveByteRate
 
 -- | The number of significant bits in a sample.
 waveBitsPerSample :: Wave -> Word16
-waveBitsPerSample Wave {..} =
+waveBitsPerSample Wave{..} =
   case waveSampleFormat of
     SampleFormatPcmInt bps -> bps
     SampleFormatIeeeFloat32Bit -> 32
@@ -277,7 +277,7 @@ waveBlockAlign wave = waveChannels wave * bytesPerSample
 
 -- | The total number of channels present in the audio stream.
 waveChannels :: Wave -> Word16
-waveChannels Wave {..} = fromIntegral (E.size waveChannelMask)
+waveChannels Wave{..} = fromIntegral (E.size waveChannelMask)
 
 -- | The duration in seconds.
 waveDuration :: Wave -> Double
@@ -446,7 +446,7 @@ readWaveRF64 h giveup liftGet = do
   mds64 <- liftGet (readChunk h 0xffff)
   unless (chunkTag mds64 == "ds64") $
     giveup (BadFileFormat "Can't find ds64 chunk")
-  Ds64 {..} <- case chunkBody mds64 of
+  Ds64{..} <- case chunkBody mds64 of
     Nothing -> giveup (NonDataChunkIsTooLong "ds64")
     Just body -> liftGet (return $ readDs64 body)
   grabWaveChunks
@@ -488,7 +488,7 @@ grabWaveChunks h giveup liftGet mdataSize msamplesTotal = go False
   where
     go seenFact wave = do
       offset <- hTell h
-      Chunk {..} <- liftGet (readChunk h 0xffff)
+      Chunk{..} <- liftGet (readChunk h 0xffff)
       case (chunkTag, chunkBody) of
         ("data", _) -> do
           let nonPcm = isNonPcm (waveSampleFormat wave)
@@ -507,7 +507,7 @@ grabWaveChunks h giveup liftGet mdataSize msamplesTotal = go False
                   _ ->
                     if nonPcm
                       then waveSamplesTotal wave
-                      else pcmSamplesTotal wave {waveDataSize = dataSize},
+                      else pcmSamplesTotal wave{waveDataSize = dataSize},
                 waveOtherChunks = reverse (waveOtherChunks wave)
               }
         (tag, Nothing) ->
@@ -516,11 +516,11 @@ grabWaveChunks h giveup liftGet mdataSize msamplesTotal = go False
           liftGet (return $ readWaveFmt wave body) >>= go seenFact
         ("fact", Just body) -> do
           samplesTotal <- liftGet (return $ readFact body)
-          go True wave {waveSamplesTotal = fromIntegral samplesTotal}
+          go True wave{waveSamplesTotal = fromIntegral samplesTotal}
         (tag, Just body) ->
           go
             seenFact
-            wave {waveOtherChunks = (tag, body) : waveOtherChunks wave}
+            wave{waveOtherChunks = (tag, body) : waveOtherChunks wave}
 
 -- | Read a “ds64” chunk which contains RIFF chunk\/data chunk lengths as 64
 -- bit values and the total number of samples.
@@ -529,7 +529,7 @@ readDs64 bytes = flip S.runGet bytes $ do
   ds64RiffSize <- S.getWord64le
   ds64DataSize <- S.getWord64le
   ds64SamplesTotal <- S.getWord64le
-  return Ds64 {..}
+  return Ds64{..}
 
 -- | Parse the WAVE format chunk from given 'ByteString'. Return error in
 -- 'Left' in case of failure.
@@ -610,15 +610,15 @@ readChunk h maxSize = do
         chunkTag <- S.getBytes 4
         chunkSize <- S.getWord32le
         let chunkBody = Nothing
-        return Chunk {..}
+        return Chunk{..}
   case echunk of
     Left msg -> return (Left msg)
-    Right chunk@Chunk {..} -> do
+    Right chunk@Chunk{..} -> do
       body <-
         if chunkSize <= maxSize
           then Just <$> B.hGet h (fromIntegral chunkSize)
           else return Nothing
-      (return . Right) chunk {chunkBody = body}
+      (return . Right) chunk{chunkBody = body}
 
 ----------------------------------------------------------------------------
 -- Writing
@@ -688,7 +688,7 @@ writeWaveVanilla h wave writeData = do
       dataSize = fromIntegral (afterData - beforeData - 8)
       samplesTotal =
         fromIntegral $
-          pcmSamplesTotal wave {waveDataSize = fromIntegral dataSize}
+          pcmSamplesTotal wave{waveDataSize = fromIntegral dataSize}
   when nonPcm $ do
     hSeek h AbsoluteSeek beforeFact
     writeBsChunk h "fact" (renderFactChunk samplesTotal)
@@ -723,8 +723,8 @@ writeWaveRF64 h wave writeData = do
   afterData <- hTell h
   let ds64RiffSize = fromIntegral (afterData - beforeOuter - 8)
       ds64DataSize = fromIntegral (afterData - beforeData - 8)
-      ds64SamplesTotal = pcmSamplesTotal wave {waveDataSize = ds64DataSize}
-      ds64Chunk = Ds64 {..}
+      ds64SamplesTotal = pcmSamplesTotal wave{waveDataSize = ds64DataSize}
+      ds64Chunk = Ds64{..}
   hSeek h AbsoluteSeek beforeDs64
   writeBsChunk h "ds64" (renderDs64Chunk ds64Chunk)
 
@@ -744,18 +744,18 @@ writeBsChunk ::
 writeBsChunk h chunkTag body =
   let chunkSize = fromIntegral (B.length body)
       chunkBody = Right body
-   in writeChunk h Chunk {..}
+   in writeChunk h Chunk{..}
 
 -- | Render a “ds64” chunk as a strict 'ByteString'.
 renderDs64Chunk :: Ds64 -> ByteString
-renderDs64Chunk Ds64 {..} = S.runPut $ do
+renderDs64Chunk Ds64{..} = S.runPut $ do
   S.putWord64le ds64RiffSize
   S.putWord64le ds64DataSize
   S.putWord64le ds64SamplesTotal
 
 -- | Render the format chunk as a strict 'ByteString' from a given 'Wave'.
 renderFmtChunk :: Wave -> ByteString
-renderFmtChunk wave@Wave {..} = S.runPut $ do
+renderFmtChunk wave@Wave{..} = S.runPut $ do
   let extensible = isExtensibleFmt wave
       fmt = case waveSampleFormat of
         SampleFormatPcmInt _ -> waveFormatPcm
@@ -790,7 +790,7 @@ writeChunk ::
   -- | The 'Chunk' to write
   Chunk (Either (Handle -> IO ())) ->
   IO ()
-writeChunk h Chunk {..} = do
+writeChunk h Chunk{..} = do
   let bytes = S.runPut $ do
         S.putByteString (B.take 4 $ chunkTag <> B.replicate 4 0x00)
         S.putWord32le chunkSize
@@ -882,7 +882,7 @@ defaultSpeakerSet n = case n of
 
 -- | Does this 'Wave' record require an extensible format chunk to be used?
 isExtensibleFmt :: Wave -> Bool
-isExtensibleFmt wave@Wave {..} =
+isExtensibleFmt wave@Wave{..} =
   waveChannels wave > 2
     || waveChannelMask /= defaultSpeakerSet (waveChannels wave)
     || (waveBitsPerSample wave `rem` 8) /= 0

@@ -28,7 +28,7 @@ spec :: Spec
 spec = do
   describe "vanilla WAVE" $ do
     it "2 channels  8000 Hz  8 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/2ch-8000hz-8bit.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/2ch-8000hz-8bit.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 8000
       waveSampleFormat `shouldBe` SampleFormatPcmInt 8
@@ -45,7 +45,7 @@ spec = do
       waveDuration w `shouldBe` 0.711
 
     it "2 channels 11025 Hz 24 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/2ch-11025hz-24bit.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/2ch-11025hz-24bit.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 11025
       waveSampleFormat `shouldBe` SampleFormatPcmInt 24
@@ -62,7 +62,7 @@ spec = do
       waveDuration w `shouldBe` 0.35183673469387755
 
     it "1 channel  44100 Hz 16 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-44100hz-16bit.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-44100hz-16bit.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 44100
       waveSampleFormat `shouldBe` SampleFormatPcmInt 16
@@ -79,7 +79,7 @@ spec = do
       waveDuration w `shouldBe` 0.0572108843537415
 
     it "1 channel  48000 Hz 32 bit float" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-48000hz-32bit-float.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-48000hz-32bit-float.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 48000
       waveSampleFormat `shouldBe` SampleFormatIeeeFloat32Bit
@@ -97,7 +97,7 @@ spec = do
       waveDuration w `shouldBe` 0.25072916666666667
 
     it "1 channel  16000 Hz 64 bit float" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-16000hz-64bit-float.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-16000hz-64bit-float.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 16000
       waveSampleFormat `shouldBe` SampleFormatIeeeFloat64Bit
@@ -116,7 +116,7 @@ spec = do
 
   describe "vanilla WAVE with extensible fmt chunk" $ do
     it "2 channels  8000 Hz  8 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/2ch-8000hz-8bit-x.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/2ch-8000hz-8bit-x.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 8000
       waveSampleFormat `shouldBe` SampleFormatPcmInt 8
@@ -133,7 +133,7 @@ spec = do
       waveDuration w `shouldBe` 0.711
 
     it "2 channels 11025 Hz 24 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/2ch-11025hz-24bit-x.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/2ch-11025hz-24bit-x.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 11025
       waveSampleFormat `shouldBe` SampleFormatPcmInt 24
@@ -150,7 +150,7 @@ spec = do
       waveDuration w `shouldBe` 0.35183673469387755
 
     it "1 channel  44100 Hz 16 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-44100hz-16bit-x.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-44100hz-16bit-x.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 44100
       waveSampleFormat `shouldBe` SampleFormatPcmInt 16
@@ -167,7 +167,7 @@ spec = do
       waveDuration w `shouldBe` 0.0572108843537415
 
     it "1 channel  48000 Hz 32 bit float" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-48000hz-32bit-float-x.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-48000hz-32bit-float-x.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 48000
       waveSampleFormat `shouldBe` SampleFormatIeeeFloat32Bit
@@ -185,7 +185,7 @@ spec = do
       waveDuration w `shouldBe` 0.25072916666666667
 
     it "1 channel  16000 Hz 64 bit float" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-16000hz-64bit-float-x.wav"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-16000hz-64bit-float-x.wav"
       waveFileFormat `shouldBe` WaveVanilla
       waveSampleRate `shouldBe` 16000
       waveSampleFormat `shouldBe` SampleFormatIeeeFloat64Bit
@@ -204,7 +204,7 @@ spec = do
 
   describe "RF64 WAVE" $ do
     it "2 channels  8000 Hz  8 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/2ch-8000hz-8bit.rf64"
+      w@Wave{..} <- readWaveFile "audio-samples/2ch-8000hz-8bit.rf64"
       waveFileFormat `shouldBe` WaveRF64
       waveSampleRate `shouldBe` 8000
       waveSampleFormat `shouldBe` SampleFormatPcmInt 8
@@ -221,7 +221,7 @@ spec = do
       waveDuration w `shouldBe` 0.711
 
     it "2 channels 11025 Hz 24 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/2ch-11025hz-24bit.rf64"
+      w@Wave{..} <- readWaveFile "audio-samples/2ch-11025hz-24bit.rf64"
       waveFileFormat `shouldBe` WaveRF64
       waveSampleRate `shouldBe` 11025
       waveSampleFormat `shouldBe` SampleFormatPcmInt 24
@@ -238,7 +238,7 @@ spec = do
       waveDuration w `shouldBe` 0.35183673469387755
 
     it "1 channel  44100 Hz 16 bit" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-44100hz-16bit.rf64"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-44100hz-16bit.rf64"
       waveFileFormat `shouldBe` WaveRF64
       waveSampleRate `shouldBe` 44100
       waveSampleFormat `shouldBe` SampleFormatPcmInt 16
@@ -255,7 +255,7 @@ spec = do
       waveDuration w `shouldBe` 0.0572108843537415
 
     it "1 channel  48000 Hz 32 bit float" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-48000hz-32bit-float.rf64"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-48000hz-32bit-float.rf64"
       waveFileFormat `shouldBe` WaveRF64
       waveSampleRate `shouldBe` 48000
       waveSampleFormat `shouldBe` SampleFormatIeeeFloat32Bit
@@ -272,7 +272,7 @@ spec = do
       waveDuration w `shouldBe` 0.25072916666666667
 
     it "1 channel  16000 Hz 64 bit float" $ do
-      w@Wave {..} <- readWaveFile "audio-samples/1ch-16000hz-64bit-float.rf64"
+      w@Wave{..} <- readWaveFile "audio-samples/1ch-16000hz-64bit-float.rf64"
       waveFileFormat `shouldBe` WaveRF64
       waveSampleRate `shouldBe` 16000
       waveSampleFormat `shouldBe` SampleFormatIeeeFloat64Bit
@@ -296,7 +296,7 @@ spec = do
               if odd (dataSize + totalExtraLength wave)
                 then dataSize + 1
                 else dataSize
-            samplesTotal = pcmSamplesTotal wave {waveDataSize = dataSize'}
+            samplesTotal = pcmSamplesTotal wave{waveDataSize = dataSize'}
         writeWaveFile path wave (writeBytes dataSize)
         wave' <- readWaveFile path
         wave'
@@ -321,28 +321,28 @@ spec = do
             }
     describe "speakerMono"
       $ it "has 1 channel"
-      $ waveChannels def {waveChannelMask = speakerMono} `shouldBe` 1
+      $ waveChannels def{waveChannelMask = speakerMono} `shouldBe` 1
     describe "speakerStereo"
       $ it "has 2 channels"
-      $ waveChannels def {waveChannelMask = speakerStereo} `shouldBe` 2
+      $ waveChannels def{waveChannelMask = speakerStereo} `shouldBe` 2
     describe "speakerQuad"
       $ it "has 4 channels"
-      $ waveChannels def {waveChannelMask = speakerQuad} `shouldBe` 4
+      $ waveChannels def{waveChannelMask = speakerQuad} `shouldBe` 4
     describe "speakerSurround"
       $ it "has 4 channels"
-      $ waveChannels def {waveChannelMask = speakerSurround} `shouldBe` 4
+      $ waveChannels def{waveChannelMask = speakerSurround} `shouldBe` 4
     describe "speaker5_1"
       $ it "has 6 channels"
-      $ waveChannels def {waveChannelMask = speaker5_1} `shouldBe` 6
+      $ waveChannels def{waveChannelMask = speaker5_1} `shouldBe` 6
     describe "speaker7_1"
       $ it "has 8 channels"
-      $ waveChannels def {waveChannelMask = speaker7_1} `shouldBe` 8
+      $ waveChannels def{waveChannelMask = speaker7_1} `shouldBe` 8
     describe "speaker5_1Surround"
       $ it "has 6 channels"
-      $ waveChannels def {waveChannelMask = speaker5_1Surround} `shouldBe` 6
+      $ waveChannels def{waveChannelMask = speaker5_1Surround} `shouldBe` 6
     describe "speaker7_1"
       $ it "has 8 channels"
-      $ waveChannels def {waveChannelMask = speaker7_1Surround} `shouldBe` 8
+      $ waveChannels def{waveChannelMask = speaker7_1Surround} `shouldBe` 8
 
 ----------------------------------------------------------------------------
 -- Instances
@@ -365,7 +365,7 @@ instance Arbitrary Wave where
       tag <- B.pack <$> vectorOf 4 arbitrary
       body <- B.pack <$> arbitrary
       return (tag, body)
-    return Wave {..}
+    return Wave{..}
 
 instance Arbitrary SpeakerPosition where
   arbitrary = elements [minBound .. maxBound]
